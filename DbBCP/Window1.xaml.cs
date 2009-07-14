@@ -1,24 +1,15 @@
-﻿namespace DbBCP
-{
-	using System;
-	using System.Collections.Generic;
-	using System.Linq;
-	using System.Text;
-	using System.Data.SqlClient;
-	using System.Reflection;
-	using System.Threading;
-	using System.Windows;
-	using System.Windows.Controls;
-	using System.Windows.Data;
-	using System.Windows.Documents;
-	using System.Windows.Input;
-	using System.Windows.Media;
-	using System.Windows.Media.Imaging;
-	using System.Windows.Navigation;
-	using System.Windows.Shapes;
-	using System.Diagnostics;
-	using Common.Logging;
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Windows;
+using System.Windows.Controls;
+using Common.Logging;
 
+namespace DbBCP
+{
 
 	public partial class MainWindow : Window
 	{
@@ -31,64 +22,89 @@
 		}
 
 
-		private void btnBulkCopy_Click(object sender, RoutedEventArgs e)
+		private void btnConnect_Click(object sender, RoutedEventArgs e)
 		{
-			BcpWorker();
+			if (txtSourceServer.Text == "" || txtSourceCatalog.Text == "") {
+				return;
+			}
+
+			SqlConnectionStringBuilder cbSource = new SqlConnectionStringBuilder {
+				DataSource = txtSourceServer.Text,
+				InitialCatalog = txtSourceCatalog.Text,
+				IntegratedSecurity = (txtSourceUser.Text == ""),
+				UserID = txtSourceUser.Text,
+				Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : "")
+			};
+			SqlConnection connSource = new SqlConnection(cbSource.ConnectionString);
+
+			try {
+				connSource.Open();
+
+				SqlDataReader rdr = new SqlCommand(
+					@"SELECT TABLE_SCHEMA + '.' + TABLE_NAME AS DbTable FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME",
+					connSource
+				).ExecuteReader();
+
+				while (rdr.Read()) {
+					lstTables.Items.Add(new ListBoxItem {
+						Content = rdr["DbTable"].ToString()
+					});
+				}
+				rdr.Close();
+
+			} catch (Exception ex) {
+				log.Error(ex.Message, ex);
+				MessageBox.Show(ex.Message);
+
+			} finally {
+				connSource.Close();
+			}
 		}
 
 
-		private void BcpWorker()
+		private void btnBulkCopy_Click(object sender, RoutedEventArgs e)
 		{
+			if (txtSourceServer.Text == "" || txtDestServer.Text == "" || txtSourceCatalog.Text == "" || txtDestCatalog.Text == "") {
+				return;
+			}
+
 			btnBulkCopy.IsEnabled = false;
+
 			try {
-				if (txtSourceServer.Text == "" || txtDestServer.Text == "" || txtSourceCatalog.Text == "" || txtDestCatalog.Text == "") {
-					return;
-				}
-
-
 				Stopwatch sw = Stopwatch.StartNew();
 
-				SqlConnectionStringBuilder cbSource = new SqlConnectionStringBuilder();
-				cbSource.DataSource = txtSourceServer.Text;
-				cbSource.InitialCatalog = txtSourceCatalog.Text;
-				cbSource.IntegratedSecurity = (txtSourceUser.Text == "");
-				if (!cbSource.IntegratedSecurity) {
-					cbSource.UserID = txtSourceUser.Text;
-					cbSource.Password = txtSourcePass.Text;
-				}
+				SqlConnectionStringBuilder cbSource = new SqlConnectionStringBuilder {
+					DataSource = txtSourceServer.Text,
+					InitialCatalog = txtSourceCatalog.Text,
+					IntegratedSecurity = (txtSourceUser.Text == ""),
+					UserID = txtSourceUser.Text,
+					Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : "")
+				};
 
-				SqlConnectionStringBuilder cbDest = new SqlConnectionStringBuilder();
-				cbDest.DataSource = txtDestServer.Text;
-				cbDest.InitialCatalog = txtDestCatalog.Text;
-				cbDest.IntegratedSecurity = (txtDestUser.Text == "");
-				if (!cbDest.IntegratedSecurity) {
-					cbDest.UserID = txtDestUser.Text;
-					cbDest.Password = txtDestPass.Text;
-				}
+				SqlConnectionStringBuilder cbDest = new SqlConnectionStringBuilder {
+					DataSource = txtDestServer.Text,
+					InitialCatalog = txtDestCatalog.Text,
+					IntegratedSecurity = (txtDestUser.Text == ""),
+					UserID = txtDestUser.Text,
+					Password = (txtDestUser.Text != "" ? txtDestPass.Text : "")
+				};
 
 				SqlConnection connSource = new SqlConnection(cbSource.ConnectionString);
 				connSource.Open();
 				SqlConnection connDest = new SqlConnection(cbDest.ConnectionString);
 				connDest.Open();
 
-
-				IList<string> lstTables = new List<string>();
-				SqlCommand cmdTables = new SqlCommand("SELECT TABLE_SCHEMA + '.' + TABLE_NAME AS DbTable FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_SCHEMA, TABLE_NAME", connSource);
-				SqlDataReader rdr = cmdTables.ExecuteReader();
-				while (rdr.Read()) {
-					string tableName = rdr["DbTable"].ToString();
-					lstTables.Add(tableName);
-				}
-				rdr.Close();
-
+				SqlDataReader rdr = null;
 
 				IDictionary<String, Exception> dicFailedTables = new Dictionary<String, Exception>();
-				foreach (string sTableName in lstTables) {
+
+				foreach (ListBoxItem itmTable in lstTables.SelectedItems) {
+					string sTableName = itmTable.Content.ToString();
+
 					//SqlTransaction trnDest = null;
 					SqlBulkCopy sbc = null;
 					try {
-						SqlCommand cmdData = new SqlCommand("SELECT * FROM " + sTableName, connSource);
-						rdr = cmdData.ExecuteReader();
+						rdr = new SqlCommand("SELECT * FROM " + sTableName, connSource).ExecuteReader();
 
 						//TODO: fall back to DELETE FROM if TRUNCATE cannot be used, also tables need to be ordered by dependencies if there are FKs...
 						//trnDest = connDest.BeginTransaction();
@@ -101,29 +117,29 @@
 						}
 
 						//sbc = new SqlBulkCopy(connDest, SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls, trnDest);
-						//sbc = new SqlBulkCopy(connDest, SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls | SqlBulkCopyOptions.UseInternalTransaction, null);
-						sbc = new SqlBulkCopy(cbDest.ConnectionString, SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls | SqlBulkCopyOptions.UseInternalTransaction);
-						sbc.BulkCopyTimeout = 900;
-						sbc.BatchSize = 10000;
-						sbc.NotifyAfter = sbc.BatchSize;
-						sbc.SqlRowsCopied += new SqlRowsCopiedEventHandler(sbc_SqlRowsCopied);
-						sbc.DestinationTableName = sTableName;
+						sbc = new SqlBulkCopy(connDest, SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls | SqlBulkCopyOptions.UseInternalTransaction, null) {
+							BulkCopyTimeout = 900,
+							BatchSize = 10000,
+							NotifyAfter = 10000,
+							DestinationTableName = sTableName,
+						};
+						sbc.SqlRowsCopied += sbc_SqlRowsCopied;
+
 						SqlBulkCopyColumnMappingCollection mapColumns = sbc.ColumnMappings;
 						for (int i = 0; i < rdr.FieldCount; i++) {
 							string sFieldName = rdr.GetName(i);
 							mapColumns.Add(sFieldName, sFieldName);
 						}
+
 						sbc.WriteToServer(rdr);
 
 						//trnDest.Commit();
 
 					} catch (Exception ex) {
 						dicFailedTables[sTableName] = ex;
-						/*
-						if (trnDest != null) {
-							trnDest.Rollback();
-						}
-						*/
+						//if (trnDest != null) {
+						//    trnDest.Rollback();
+						//}
 
 					} finally {
 						if (sbc != null) {
@@ -164,11 +180,27 @@
 		}
 
 
-		private void sbc_SqlRowsCopied(object sender, SqlRowsCopiedEventArgs e)
+		private static void sbc_SqlRowsCopied(object sender, SqlRowsCopiedEventArgs e)
 		{
 			log.Debug(String.Format("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy)sender).DestinationTableName));
 		}
 
+		private void lstTables_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			btnBulkCopy.IsEnabled = (txtDestServer.Text != "" && txtDestCatalog.Text != "" && lstTables.SelectedItems.Count > 0);
+		}
+
+		private void txtDest_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			btnBulkCopy.IsEnabled = (txtDestServer.Text != "" && txtDestCatalog.Text != "" && lstTables.SelectedItems.Count > 0);
+		}
+
+		private void txtSource_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			btnBulkCopy.IsEnabled = false;
+			btnConnect.IsEnabled = (txtSourceServer.Text != "" && txtSourceCatalog.Text != "");
+			lstTables.Items.Clear();
+		}
 
 	}
 

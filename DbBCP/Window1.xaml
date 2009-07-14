@@ -1,9 +1,9 @@
 ﻿<Window x:Class="DbBCP.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="DbBCP" Height="334.033" Width="357.357" WindowStyle="SingleBorderWindow">
-    <Grid>
-        <GroupBox Header="Source" Margin="10,12,12,0" Name="groupBox1" Height="117.453" VerticalAlignment="Top">
+    Title="DbBCP" Height="334.033" Width="518.959" WindowStyle="SingleBorderWindow">
+    <Grid Width="Auto">
+        <GroupBox Header="Source" Margin="10,12,0,0" Name="groupBox1" Height="117.453" VerticalAlignment="Top" HorizontalAlignment="Left" Width="286.206">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="0*" />
@@ -12,14 +12,14 @@
                     <ColumnDefinition Width="151.417*" />
                 </Grid.ColumnDefinitions>
                 <Label Height="28" Margin="5.801,10,61.642,0" Name="label1" VerticalAlignment="Top" Grid.Column="1">Server:</Label>
-                <TextBox Height="23" Margin="61.646,10,6,0" Name="txtSourceServer" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="3" />
+                <TextBox Height="23" Margin="61.646,10,6,0" Name="txtSourceServer" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="3" TextChanged="txtSource_TextChanged" />
                 <Label Margin="5.801,38.527,61.642,28.915" Name="label2" Grid.Column="1">Catalog:</Label>
-                <TextBox Margin="61.646,39.153,6,0" Name="txtSourceCatalog" Grid.Column="1" Height="21.22" VerticalAlignment="Top" Grid.ColumnSpan="3" />
-                <TextBox Height="23" Margin="6,66.495,6.495,0" Name="txtSourceUser" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="2" />
-                <TextBox Height="23" Margin="0,66.495,4.165,0" Name="txtSourcePass" VerticalAlignment="Top" Grid.Column="3" />
+                <TextBox Margin="61.646,39.153,6,0" Name="txtSourceCatalog" Grid.Column="1" Height="21.22" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtSource_TextChanged" />
+                <TextBox Height="23" Margin="6,66.495,6.495,0" Name="txtSourceUser" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="2" TextChanged="txtSource_TextChanged" />
+                <TextBox Height="23" Margin="0,66.495,4.165,0" Name="txtSourcePass" VerticalAlignment="Top" Grid.Column="3" TextChanged="txtSource_TextChanged" />
             </Grid>
         </GroupBox>
-        <GroupBox Header="Destination" Margin="10,128.282,12,0" Name="groupBox2" Height="126.934" VerticalAlignment="Top">
+        <GroupBox Header="Destination" Margin="10,128.282,0,0" Name="groupBox2" HorizontalAlignment="Left" Width="286.206" Height="126.934" VerticalAlignment="Top">
             <Grid Height="105.791">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="142.443*" />
@@ -27,13 +27,15 @@
                     <ColumnDefinition Width="151.417*" />
                 </Grid.ColumnDefinitions>
                 <Label Height="28" Margin="5.831,6,61.642,0" Name="label3" VerticalAlignment="Top">Server:</Label>
-                <TextBox Height="23" Margin="61.646,6,5.831,0" Name="txtDestServer" VerticalAlignment="Top" Grid.ColumnSpan="3" />
+                <TextBox Height="23" Margin="61.646,6,5.831,0" Name="txtDestServer" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
                 <Label Margin="5.831,32.986,61.642,44.982" Name="label4">Catalog:</Label>
-                <TextBox Margin="61.646,34.986,5.831,0" Name="txtDestCatalog" Height="24.006" VerticalAlignment="Top" Grid.ColumnSpan="3" />
+                <TextBox Margin="61.646,34.986,5.831,0" Name="txtDestCatalog" Height="24.006" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
                 <TextBox Height="23" Margin="5.831,65.147,0,0" Name="txtDestUser" VerticalAlignment="Top" />
                 <TextBox Height="23" Margin="5.831,65.147,4.998,0" Name="txtDestPass" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" />
             </Grid>
         </GroupBox>
-        <Button Height="23" HorizontalAlignment="Left" Margin="12,0,0,12" Name="btnBulkCopy" VerticalAlignment="Bottom" Width="75" Click="btnBulkCopy_Click">_Bulk Copy</Button>
-    </Grid>
+        <Button Height="23" Margin="91.63,0,0,11.662" Name="btnBulkCopy" VerticalAlignment="Bottom" Click="btnBulkCopy_Click" HorizontalAlignment="Left" Width="74.97" IsEnabled="False">_Bulk Copy</Button>
+		<ListBox Margin="301.699,12,12,40.817" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" />
+		<Button Height="23" HorizontalAlignment="Left" Margin="10,0,0,11.662" Name="btnConnect" VerticalAlignment="Bottom" Width="75" Click="btnConnect_Click" IsEnabled="False">_Connect</Button>
+	</Grid>
 </Window>
