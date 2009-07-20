@@ -1,0 +1,26 @@
+##### EXCLUDES #####
+
+# Project Agnostic
+.svn/
+/_ReSharper.*/
+*.suo
+*.bak
+*.[Cc]ache
+*.user
+*.ncb
+*.resharper
+*.FileListAbsolute.txt
+Ankh.NoLoad
+
+# Project Specific
+log.txt
+log.txt.*
+
+# Build Generated
+
+# Build Binaries
+[Bb]in/
+[Oo]bj/
+
+##### INCLUDES #####
+!*.refresh
