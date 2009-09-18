@@ -56,9 +56,9 @@ namespace DbBCP
 				connSource.Open();
 
 				SqlDataReader reader = new SqlCommand(@"
-					select QUOTENAME(SCHEMA_NAME(st.schema_id)) + '.' + QUOTENAME(so.name) as TableNames, si.rows as Rows
+					select QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames, si.rows as Rows
 					from sysobjects so
-					inner join sys.tables st on st.object_id = so.id
+					inner join sysusers su on so.uid = su.uid
 					inner join sysindexes si on si.id = so.id
 					where si.indid < 2 and so.xtype = 'U'
 					order by TableNames",
@@ -158,19 +158,19 @@ namespace DbBCP
 					try {
 						transaction = connDest.BeginTransaction();
 
-						reader = new SqlCommand("SELECT * FROM " + sTableName, connSource).ExecuteReader();
+						reader = new SqlCommand("SELECT * FROM " + sTableName, connSource) { CommandTimeout = 9000 }.ExecuteReader();
 
 						try {
-							new SqlCommand("TRUNCATE TABLE " + sTableName, connDest, transaction).ExecuteNonQuery();
+							new SqlCommand("TRUNCATE TABLE " + sTableName, connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
 						} catch {
-							new SqlCommand("DELETE FROM " + sTableName, connDest, transaction).ExecuteNonQuery();
+							new SqlCommand("DELETE FROM " + sTableName, connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
 						}
 
 						bulkCopy = new SqlBulkCopy(connDest, SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls, transaction) {
-							BulkCopyTimeout = 900,
+							BulkCopyTimeout = 9000,
 							BatchSize = 10000,
 							NotifyAfter = 10000,
-							DestinationTableName = sTableName,
+							DestinationTableName = sTableName
 						};
 						bulkCopy.SqlRowsCopied += sbc_SqlRowsCopied;
 

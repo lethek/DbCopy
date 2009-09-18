@@ -34,7 +34,7 @@
                 <TextBox Height="23" Margin="5.831,65.147,4.998,0" Name="txtDestPass" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" />
             </Grid>
         </GroupBox>
-		<ListBox Margin="0,12,12,29" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" HorizontalAlignment="Right" Width="228.301" />
+		<ListBox Margin="301.699,12,12,29" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" />
 		<Button Height="23" HorizontalAlignment="Left" Margin="12,0,0,29" Name="btnConnect" VerticalAlignment="Bottom" Width="75" Click="btnConnect_Click" IsEnabled="False">Co_nnect</Button>
 		<Button Height="23" Margin="94,0,0,29" Name="btnBulkCopy" VerticalAlignment="Bottom" Click="btnBulkCopy_Click" HorizontalAlignment="Left" Width="74.97" IsEnabled="False">_Bulk Copy</Button>
 		<Button Height="23" Margin="175,0,0,30" Name="btnCancel" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="74.959" Click="btnCancel_Click" IsEnabled="False">_Cancel</Button>
