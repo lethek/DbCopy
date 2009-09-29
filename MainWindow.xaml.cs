@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Windows.Input;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SqlClient;
@@ -8,14 +7,15 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Common.Logging;
+
+using DbCopy.Properties;
 
 namespace DbCopy
 {
-
 	public partial class MainWindow : Window
 	{
-
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private readonly BackgroundWorker worker = new BackgroundWorker();
 
@@ -26,6 +26,16 @@ namespace DbCopy
 		public MainWindow()
 		{
 			InitializeComponent();
+
+			//Load config
+			txtSourceServer.Text = Settings.Default.SourceServer;
+			txtSourceCatalog.Text = Settings.Default.SourceCatalog;
+			txtSourceUser.Text = Settings.Default.SourceUsername;
+			txtSourcePass.Text = Settings.Default.SourcePassword;
+			txtDestServer.Text = Settings.Default.DestServer;
+			txtDestCatalog.Text = Settings.Default.DestCatalog;
+			txtDestUser.Text = Settings.Default.DestUsername;
+			txtDestPass.Text = Settings.Default.DestPassword;
 
 			worker.WorkerReportsProgress = true;
 			worker.WorkerSupportsCancellation = true;
@@ -63,7 +73,7 @@ namespace DbCopy
 					where si.indid < 2 and so.xtype = 'U'
 					order by TableNames",
 					connSource
-				).ExecuteReader();
+					).ExecuteReader();
 
 				while (reader.Read()) {
 					lstTables.Items.Add(new ListBoxItem {
@@ -72,11 +82,9 @@ namespace DbCopy
 					});
 				}
 				reader.Close();
-
 			} catch (Exception ex) {
 				log.Error(ex.Message, ex);
 				MessageBox.Show(ex.Message);
-
 			} finally {
 				connSource.Close();
 			}
@@ -135,7 +143,7 @@ namespace DbCopy
 			BulkCopyResult result = new BulkCopyResult();
 			e.Result = result;
 
-			BulkCopyParameters parameters = (BulkCopyParameters)e.Argument;
+			BulkCopyParameters parameters = (BulkCopyParameters) e.Argument;
 
 			try {
 				connSource = new SqlConnection(parameters.Source.ConnectionString);
@@ -147,7 +155,6 @@ namespace DbCopy
 				SqlDataReader reader = null;
 				//TODO: tables need to be ordered by dependencies if there are FKs...
 				foreach (string sTableName in parameters.Tables.Keys) {
-
 					if (worker.CancellationPending) {
 						e.Cancel = true;
 						return;
@@ -158,12 +165,12 @@ namespace DbCopy
 					try {
 						transaction = connDest.BeginTransaction();
 
-						reader = new SqlCommand("SELECT * FROM " + sTableName, connSource) { CommandTimeout = 9000 }.ExecuteReader();
+						reader = new SqlCommand("SELECT * FROM " + sTableName, connSource) {CommandTimeout = 9000}.ExecuteReader();
 
 						try {
-							new SqlCommand("TRUNCATE TABLE " + sTableName, connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
+							new SqlCommand("TRUNCATE TABLE " + sTableName, connDest, transaction) {CommandTimeout = 120}.ExecuteNonQuery();
 						} catch {
-							new SqlCommand("DELETE FROM " + sTableName, connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
+							new SqlCommand("DELETE FROM " + sTableName, connDest, transaction) {CommandTimeout = 120}.ExecuteNonQuery();
 						}
 
 						bulkCopy = new SqlBulkCopy(connDest, SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls, transaction) {
@@ -186,13 +193,11 @@ namespace DbCopy
 						transaction.Commit();
 
 						log.Info(String.Format("Copied approximately {0} rows to {1}", parameters.Tables[sTableName], sTableName));
-
 					} catch (Exception ex) {
 						result.FailedTables[sTableName] = ex;
 						if (transaction != null) {
 							transaction.Rollback();
 						}
-
 					} finally {
 						if (bulkCopy != null) {
 							bulkCopy.Close();
@@ -207,7 +212,6 @@ namespace DbCopy
 						return;
 					}
 				}
-
 			} finally {
 				if (connDest != null) {
 					connDest.Close();
@@ -223,7 +227,7 @@ namespace DbCopy
 
 		private void BulkCopy_ProgressChanged(object sender, ProgressChangedEventArgs e)
 		{
-			barProgress.Value = (double)e.ProgressPercentage / 1000;
+			barProgress.Value = (double) e.ProgressPercentage/1000;
 		}
 
 
@@ -235,10 +239,8 @@ namespace DbCopy
 			if (e.Error != null) {
 				log.Error(e.Error.Message, e.Error);
 				MessageBox.Show(e.Error.Message);
-
 			} else if (e.Cancelled) {
 				log.Info("Bulk copy operation cancelled");
-
 			} else {
 				BulkCopyResult result = e.Result as BulkCopyResult;
 				if (result == null) {
@@ -250,7 +252,6 @@ namespace DbCopy
 
 				if (result.FailedTables.Count == 0) {
 					MessageBox.Show(msgCompleted);
-
 				} else {
 					string msgErrors = String.Format("The following tables failed to copy:");
 					log.Error(msgErrors);
@@ -272,13 +273,13 @@ namespace DbCopy
 
 		private void sbc_SqlRowsCopied(object sender, SqlRowsCopiedEventArgs e)
 		{
-			log.Debug(String.Format("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy)sender).DestinationTableName));
+			log.Debug(String.Format("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy) sender).DestinationTableName));
 
 			double percentProgress = 100.0;
 			if (e.RowsCopied > 0) {
-				percentProgress = Math.Min(((double)e.RowsCopied / currentTableRows * 100), 100.0); //Math.Min because its possible to get > 100% since neither figure can be guaranteed for accuracy
+				percentProgress = Math.Min(((double) e.RowsCopied/currentTableRows*100), 100.0); //Math.Min because its possible to get > 100% since neither figure can be guaranteed for accuracy
 			}
-			worker.ReportProgress((int)(percentProgress * 1000)); //For increased granularity, multiply by 1000 and divide later since ReportProgress only supports integers
+			worker.ReportProgress((int) (percentProgress*1000)); //For increased granularity, multiply by 1000 and divide later since ReportProgress only supports integers
 
 			if (worker.IsBusy && worker.CancellationPending) {
 				e.Abort = true;
@@ -327,6 +328,17 @@ namespace DbCopy
 
 		private void Window_Closing(object sender, CancelEventArgs e)
 		{
+			//Save config
+			Settings.Default.SourceServer = txtSourceServer.Text;
+			Settings.Default.SourceCatalog = txtSourceCatalog.Text;
+			Settings.Default.SourceUsername = txtSourceUser.Text;
+			Settings.Default.SourcePassword = txtSourcePass.Text;
+			Settings.Default.DestServer = txtDestServer.Text;
+			Settings.Default.DestCatalog = txtDestCatalog.Text;
+			Settings.Default.DestUsername = txtDestUser.Text;
+			Settings.Default.DestPassword = txtDestPass.Text;
+			Settings.Default.Save();
+
 			if (worker.IsBusy && !worker.CancellationPending) {
 				btnCancel.IsEnabled = false;
 				btnCancel.Content = "Closing...";
@@ -337,5 +349,4 @@ namespace DbCopy
 		}
 
 	}
-
 }
