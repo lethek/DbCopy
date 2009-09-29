@@ -117,4 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="btnBulkCopy_Content" xml:space="preserve">
+    <value>_Bulk Copy</value>
+  </data>
+  <data name="btnCancel_Content" xml:space="preserve">
+    <value>_Cancel</value>
+  </data>
+  <data name="btnConnect_Content" xml:space="preserve">
+    <value>Co_nnect</value>
+  </data>
+  <data name="grpDest_Header" xml:space="preserve">
+    <value>Destination</value>
+  </data>
+  <data name="grpSource_Header" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="lblDestCatalog_Content" xml:space="preserve">
+    <value>Catalog:</value>
+  </data>
+  <data name="lblDestServer_Content" xml:space="preserve">
+    <value>Server:</value>
+  </data>
+  <data name="lblSourceCatalog_Content" xml:space="preserve">
+    <value>Catalog:</value>
+  </data>
+  <data name="lblSourceServer_Content" xml:space="preserve">
+    <value>Server:</value>
+  </data>
 </root>
