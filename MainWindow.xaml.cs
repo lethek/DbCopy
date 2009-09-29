@@ -10,7 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Common.Logging;
 
-namespace DbBCP
+namespace DbCopy
 {
 
 	public partial class MainWindow : Window

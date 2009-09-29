@@ -1,7 +1,7 @@
-﻿<Window x:Class="DbBCP.MainWindow"
+﻿<Window x:Class="DbCopy.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="DbBCP" Height="353" Width="564" WindowStyle="SingleBorderWindow" KeyDown="Window_KeyDown" Closing="Window_Closing">
+    Title="DbCopy" Height="353" Width="564" WindowStyle="SingleBorderWindow" KeyDown="Window_KeyDown" Closing="Window_Closing">
     <Grid Width="Auto">
         <GroupBox Header="Source" Margin="10,12,0,0" Name="grpSource" Height="117.453" VerticalAlignment="Top" HorizontalAlignment="Left" Width="286.206">
             <Grid>

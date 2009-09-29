@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DbBCP
+namespace DbCopy
 {
 
 	public class BulkCopyResult
