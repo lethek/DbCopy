@@ -144,4 +144,19 @@
   <data name="lblSourceServer_Content" xml:space="preserve">
     <value>Server:</value>
   </data>
+  <data name="lstTables_ToolTip" xml:space="preserve">
+    <value>Tables to copy</value>
+  </data>
+  <data name="txtDestPass_ToolTip" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="txtDestUser_ToolTip" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="txtSourcePass_ToolTip" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="txtSourceUser_ToolTip" xml:space="preserve">
+    <value>Username</value>
+  </data>
 </root>

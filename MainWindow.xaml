@@ -17,8 +17,8 @@
                 <TextBox Height="23" Margin="61.646,10,6,0" Name="txtSourceServer" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="3" TextChanged="txtSource_TextChanged" />
                 <Label Margin="5.801,38.527,61.642,28.915" Name="lblSourceCatalog" Grid.Column="1" Content="{LocText DbCopy:Resources:lblSourceCatalog_Content}" />
                 <TextBox Margin="61.646,39.153,6,0" Name="txtSourceCatalog" Grid.Column="1" Height="21.22" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtSource_TextChanged" />
-                <TextBox Height="23" Margin="6,66.495,6.495,0" Name="txtSourceUser" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="2" TextChanged="txtSource_TextChanged" />
-                <TextBox Height="23" Margin="0,66.495,4.165,0" Name="txtSourcePass" VerticalAlignment="Top" Grid.Column="3" TextChanged="txtSource_TextChanged" />
+                <TextBox Height="23" Margin="6,66.495,6.495,0" Name="txtSourceUser" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="2" TextChanged="txtSource_TextChanged" ToolTip="{LocText DbCopy:Resources:txtSourceUser_ToolTip}" />
+                <TextBox Height="23" Margin="0,66.495,4.165,0" Name="txtSourcePass" VerticalAlignment="Top" Grid.Column="3" TextChanged="txtSource_TextChanged" ToolTip="{LocText DbCopy:Resources:txtSourcePass_ToolTip}" />
             </Grid>
         </GroupBox>
         <GroupBox Header="{LocText DbCopy:Resources:grpDest_Header}" Margin="10,128.282,0,0" Name="grpDest" HorizontalAlignment="Left" Width="286.206" Height="126.934" VerticalAlignment="Top">
@@ -32,11 +32,11 @@
                 <TextBox Height="23" Margin="61.646,6,5.831,0" Name="txtDestServer" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
                 <Label Margin="5.831,32.986,61.642,44.982" Name="lblDestCatalog" Content="{LocText DbCopy:Resources:lblDestCatalog_Content}" />
                 <TextBox Margin="61.646,34.986,5.831,0" Name="txtDestCatalog" Height="24.006" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
-                <TextBox Height="23" Margin="5.831,65.147,0,0" Name="txtDestUser" VerticalAlignment="Top" />
-                <TextBox Height="23" Margin="5.831,65.147,4.998,0" Name="txtDestPass" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" />
+                <TextBox Height="23" Margin="5.831,65.147,0,0" Name="txtDestUser" VerticalAlignment="Top" ToolTip="{LocText DbCopy:Resources:txtDestUser_ToolTip}" />
+                <TextBox Height="23" Margin="5.831,65.147,4.998,0" Name="txtDestPass" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" ToolTip="{LocText DbCopy:Resources:txtDestPass_ToolTip}" />
             </Grid>
         </GroupBox>
-		<ListBox Margin="301.699,12,12,29" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" />
+		<ListBox Margin="301.699,12,12,29" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" ToolTip="{LocText DbCopy:Resources:lstTables_ToolTip}" />
         <Button Height="23" HorizontalAlignment="Left" Margin="12,0,0,29" Name="btnConnect" VerticalAlignment="Bottom" Width="75" Click="btnConnect_Click" IsEnabled="False" Content="{LocText DbCopy:Resources:btnConnect_Content}" />
         <Button Height="23" Margin="94,0,0,29" Name="btnBulkCopy" VerticalAlignment="Bottom" Click="btnBulkCopy_Click" HorizontalAlignment="Left" Width="74.97" IsEnabled="False" Content="{LocText DbCopy:Resources:btnBulkCopy_Content}" />
         <Button Height="23" Margin="175,0,0,30" Name="btnCancel" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="74.959" Click="btnCancel_Click" IsEnabled="False" Content="{LocText DbCopy:Resources:btnCancel_Content}" />
