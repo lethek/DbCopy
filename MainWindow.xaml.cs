@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Common.Logging;
 
 using DbCopy.Properties;
@@ -52,6 +53,51 @@ namespace DbCopy
 				return;
 			}
 
+			HashSet<string> destTableNames = null;
+
+			lstTables.Items.Clear();
+
+
+			//Try connecting to the Destination database and retrieve its list of tables
+			if (txtDestServer.Text.Length > 0 && txtDestCatalog.Text.Length > 0) {
+				SqlConnectionStringBuilder cbDest = new SqlConnectionStringBuilder {
+					DataSource = txtDestServer.Text,
+					InitialCatalog = txtDestCatalog.Text,
+					IntegratedSecurity = (txtDestUser.Text == ""),
+					UserID = txtDestUser.Text,
+					Password = (txtDestUser.Text != "" ? txtDestPass.Text : "")
+				};
+
+				string query = @"
+					select QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames
+					from sysobjects so
+					inner join sysusers su on so.uid = su.uid
+					where so.xtype = 'U'
+					order by TableNames";
+
+				using (SqlConnection connDest = new SqlConnection(cbDest.ConnectionString))
+				using (SqlCommand cmdDest = new SqlCommand(query, connDest)) {
+					connDest.Open();
+					SqlDataReader reader = null;
+					try {
+						destTableNames = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+						reader = cmdDest.ExecuteReader();
+						while (reader.Read()) {
+							destTableNames.Add(reader["TableNames"].ToString());
+						}
+					} catch (Exception ex) {
+						//Ignore errors at this stage - indicate that destination table names are not available by setting the hashset to null
+						destTableNames = null;
+					} finally {
+						if (reader != null && !reader.IsClosed) {
+							reader.Close();
+						}
+						connDest.Close();
+					}
+				}
+			}
+
+
 			SqlConnectionStringBuilder cbSource = new SqlConnectionStringBuilder {
 				DataSource = txtSourceServer.Text,
 				InitialCatalog = txtSourceCatalog.Text,
@@ -60,8 +106,6 @@ namespace DbCopy
 				Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : "")
 			};
 			SqlConnection connSource = new SqlConnection(cbSource.ConnectionString);
-
-			//TODO: connect to destination too and mark source tables red that are missing (don't show any error messages if this part fails) 
 
 			try {
 				connSource.Open();
@@ -74,13 +118,23 @@ namespace DbCopy
 					where si.indid < 2 and so.xtype = 'U'
 					order by TableNames",
 					connSource
-					).ExecuteReader();
+				).ExecuteReader();
 
 				while (reader.Read()) {
-					lstTables.Items.Add(new ListBoxItem {
-						Content = reader["TableNames"],
+					string tableName = reader["TableNames"].ToString();
+					ListBoxItem item = new ListBoxItem {
+						Content = tableName,
 						Tag = Convert.ToInt64(reader["Rows"])
-					});
+					};
+					if (destTableNames != null) {
+						if (!destTableNames.Contains(tableName)) {
+							item.Foreground = Brushes.Red;
+							item.FontWeight = FontWeights.Bold;
+						} else {
+							item.Foreground = Brushes.DarkBlue;
+						}
+					}
+					lstTables.Items.Add(item);
 				}
 				reader.Close();
 			} catch (Exception ex) {
@@ -154,7 +208,6 @@ namespace DbCopy
 				connDest.Open();
 
 				SqlDataReader reader = null;
-				//TODO: tables need to be ordered by dependencies if there are FKs...
 				foreach (string sTableName in parameters.Tables.Keys) {
 					if (worker.CancellationPending) {
 						e.Cancel = true;
@@ -168,6 +221,7 @@ namespace DbCopy
 
 						reader = new SqlCommand("SELECT * FROM " + sTableName, connSource) {CommandTimeout = 9000}.ExecuteReader();
 
+						//TODO: any FKs should be dropped and then recreated after truncating
 						try {
 							new SqlCommand("TRUNCATE TABLE " + sTableName, connDest, transaction) {CommandTimeout = 120}.ExecuteNonQuery();
 						} catch {
