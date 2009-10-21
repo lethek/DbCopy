@@ -39,7 +39,12 @@
 		<ListBox Margin="301.699,12,12,29" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" ToolTip="{LocText DbCopy:Resources:lstTables_ToolTip}" />
         <Button Height="23" HorizontalAlignment="Left" Margin="12,0,0,29" Name="btnConnect" VerticalAlignment="Bottom" Width="75" Click="btnConnect_Click" IsEnabled="False" Content="{LocText DbCopy:Resources:btnConnect_Content}" />
         <Button Height="23" Margin="94,0,0,29" Name="btnBulkCopy" VerticalAlignment="Bottom" Click="btnBulkCopy_Click" HorizontalAlignment="Left" Width="74.97" IsEnabled="False" Content="{LocText DbCopy:Resources:btnBulkCopy_Content}" />
-        <Button Height="23" Margin="175,0,0,30" Name="btnCancel" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="74.959" Click="btnCancel_Click" IsEnabled="False" Content="{LocText DbCopy:Resources:btnCancel_Content}" />
-		<ProgressBar Height="23" Name="barProgress" VerticalAlignment="Bottom" />
+        <Button Height="23" Margin="175,0,0,29" Name="btnCancel" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="74.959" Click="btnCancel_Click" IsEnabled="False" Content="{LocText DbCopy:Resources:btnCancel_Content}" />
+        <Grid Height="23" VerticalAlignment="Bottom">
+            <ProgressBar Name="barProgress" Minimum="-1" Value="-1" />
+            <Viewbox>
+                <TextBlock Name="textProgress" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Sans-serif" FontWeight="DemiBold" />
+            </Viewbox>
+        </Grid>
 	</Grid>
 </Window>
