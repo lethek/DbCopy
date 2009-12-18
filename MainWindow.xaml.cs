@@ -310,7 +310,7 @@ namespace DbCopy
 					string msgErrors = String.Format("The following tables failed to copy:");
 					log.Error(msgErrors);
 					foreach (KeyValuePair<string, Exception> kvp in result.FailedTables) {
-						log.Error(String.Format("    [{0}] {1}", kvp.Key, kvp.Value.Message));
+						log.Error(String.Format("    {0}: {1}", kvp.Key, kvp.Value.Message));
 					}
 					MessageBox.Show(String.Format("{0}\n\n{1} {2}", msgCompleted, msgErrors, String.Join(", ", result.FailedTables.Keys.ToArray())));
 				}
@@ -456,7 +456,7 @@ namespace DbCopy
 
 		private const string Query_SelectAllInTable = @"select * from {0}";
 
-		private const string Query_DeleteAllInTable = @"delete * from {0}";
+		private const string Query_DeleteAllInTable = @"delete from {0}";
 
 		private const string Query_TruncateTable = @"truncate table {0}";
 	}
