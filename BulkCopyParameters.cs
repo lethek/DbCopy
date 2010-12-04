@@ -7,8 +7,8 @@ namespace DbCopy
 
 	public class BulkCopyParameters
 	{
-		public SqlConnectionStringBuilder Source = null;
-		public SqlConnectionStringBuilder Destination = null;
+		public SqlConnectionStringBuilder Source;
+		public SqlConnectionStringBuilder Destination;
 		public readonly SortedList<string, long> Tables = new SortedList<string, long>();
 
 		public BulkCopyParameters(SqlConnectionStringBuilder source, SqlConnectionStringBuilder destination, SortedList<string, long> tables)

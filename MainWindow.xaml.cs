@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using Common.Logging;
 
 using DbCopy.Properties;
 
@@ -18,12 +15,6 @@ namespace DbCopy
 {
 	public partial class MainWindow : Window
 	{
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private readonly BackgroundWorker worker = new BackgroundWorker();
-
-		private bool delayedShutdown = false;
-		private long currentTableRows = 0;
-
 
 		public MainWindow()
 		{
@@ -50,7 +41,6 @@ namespace DbCopy
 		private void btnConnect_Click(object sender, RoutedEventArgs e)
 		{
 			//TODO: Shunt this off into a separate thread
-
 			if (txtSourceServer.Text == "" || txtSourceCatalog.Text == "") {
 				return;
 			}
@@ -67,7 +57,7 @@ namespace DbCopy
 			//Try connecting to the Destination database and retrieve its list of tables
 			if (txtDestServer.Text.Length > 0 && txtDestCatalog.Text.Length > 0) {
 				try {
-					SqlConnectionStringBuilder cbDest = new SqlConnectionStringBuilder {
+					var cbDest = new SqlConnectionStringBuilder {
 						DataSource = txtDestServer.Text,
 						InitialCatalog = txtDestCatalog.Text,
 						IntegratedSecurity = (txtDestUser.Text == ""),
@@ -76,10 +66,10 @@ namespace DbCopy
 						ConnectTimeout = 3
 					};
 
-					using (SqlConnection connDest = new SqlConnection(cbDest.ConnectionString))
-					using (SqlCommand cmdDest = new SqlCommand(Query_SelectTableNames, connDest)) {
+					using (var connDest = new SqlConnection(cbDest.ConnectionString))
+					using (var cmdDest = new SqlCommand(Query_SelectTableNames, connDest)) {
 						connDest.Open();
-						using (SqlDataReader reader = cmdDest.ExecuteReader()) {
+						using (var reader = cmdDest.ExecuteReader()) {
 							destTableNames = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
 							while (reader.Read()) {
 								destTableNames.Add(reader["TableNames"].ToString());
@@ -106,7 +96,7 @@ namespace DbCopy
 				using (var connSource = new SqlConnection(cbSource.ConnectionString))
 				using (var cmdSource = new SqlCommand(Query_SelectTableDetails, connSource)) {
 					connSource.Open();
-					using (SqlDataReader reader = cmdSource.ExecuteReader()) {
+					using (var reader = cmdSource.ExecuteReader()) {
 						while (reader.Read()) {
 							string tableName = reader["TableNames"].ToString();
 							var item = new ListBoxItem {
@@ -144,7 +134,7 @@ namespace DbCopy
 
 			EnableForm(false);
 
-			SqlConnectionStringBuilder cbSource = new SqlConnectionStringBuilder {
+			var cbSource = new SqlConnectionStringBuilder {
 				DataSource = txtSourceServer.Text,
 				InitialCatalog = txtSourceCatalog.Text,
 				IntegratedSecurity = (txtSourceUser.Text == ""),
@@ -152,7 +142,7 @@ namespace DbCopy
 				Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : "")
 			};
 
-			SqlConnectionStringBuilder cbDest = new SqlConnectionStringBuilder {
+			var cbDest = new SqlConnectionStringBuilder {
 				DataSource = txtDestServer.Text,
 				InitialCatalog = txtDestCatalog.Text,
 				IntegratedSecurity = (txtDestUser.Text == ""),
@@ -160,7 +150,7 @@ namespace DbCopy
 				Password = (txtDestUser.Text != "" ? txtDestPass.Text : "")
 			};
 
-			SortedList<string, long> tables = new SortedList<string, long>(lstTables.SelectedItems.Count);
+			var tables = new SortedList<string, long>(lstTables.SelectedItems.Count);
 			foreach (ListBoxItem itmTable in lstTables.SelectedItems) {
 				tables[itmTable.Content.ToString()] = Convert.ToInt64(itmTable.Tag);
 			}
@@ -187,10 +177,10 @@ namespace DbCopy
 			SqlConnection connSource = null;
 			SqlConnection connDest = null;
 
-			BulkCopyResult result = new BulkCopyResult();
+			var result = new BulkCopyResult();
 			e.Result = result;
 
-			BulkCopyParameters parameters = (BulkCopyParameters) e.Argument;
+			var parameters = (BulkCopyParameters) e.Argument;
 
 			try {
 				connSource = new SqlConnection(parameters.Source.ConnectionString);
@@ -211,7 +201,7 @@ namespace DbCopy
 					try {
 						transaction = connDest.BeginTransaction();
 
-						reader = new SqlCommand(String.Format(Query_SelectAllInTable, sTableName), connSource) {CommandTimeout = 9000}.ExecuteReader();
+						reader = new SqlCommand(String.Format(Query_SelectAllInTable, sTableName), connSource) { CommandTimeout = 9000 }.ExecuteReader();
 
 						//TODO: any FKs should be dropped and then recreated after truncating
 						try {
@@ -228,13 +218,13 @@ namespace DbCopy
 						};
 						bulkCopy.SqlRowsCopied += sbc_SqlRowsCopied;
 
-						SqlBulkCopyColumnMappingCollection mapColumns = bulkCopy.ColumnMappings;
+						var mapColumns = bulkCopy.ColumnMappings;
 						for (int i = 0; i < reader.FieldCount; i++) {
 							string sFieldName = reader.GetName(i);
 							mapColumns.Add(sFieldName, sFieldName);
 						}
 
-						currentTableRows = parameters.Tables[sTableName];
+						rowsInCurrentTable = parameters.Tables[sTableName];
 
 						//Make sure the progress indicators are updated immediately, so the correct progress details are shown
 						sbc_SqlRowsCopied(bulkCopy, new SqlRowsCopiedEventArgs(0));
@@ -243,7 +233,7 @@ namespace DbCopy
 
 						transaction.Commit();
 
-						log.Info(String.Format("Copied approximately {0} rows to {1}", parameters.Tables[sTableName], sTableName));
+						log.Info("Copied approximately {0} rows to {1}", parameters.Tables[sTableName], sTableName);
 
 					} catch (Exception ex) {
 						result.FailedTables[sTableName] = ex;
@@ -265,6 +255,7 @@ namespace DbCopy
 						return;
 					}
 				}
+
 			} finally {
 				if (connDest != null) {
 					connDest.Close();
@@ -293,10 +284,12 @@ namespace DbCopy
 			if (e.Error != null) {
 				log.Error(e.Error.Message, e.Error);
 				MessageBox.Show(e.Error.Message);
+
 			} else if (e.Cancelled) {
 				log.Info("Bulk copy operation cancelled");
+
 			} else {
-				BulkCopyResult result = e.Result as BulkCopyResult;
+				var result = e.Result as BulkCopyResult;
 				if (result == null) {
 					return;
 				}
@@ -310,7 +303,7 @@ namespace DbCopy
 					string msgErrors = String.Format("The following tables failed to copy:");
 					log.Error(msgErrors);
 					foreach (KeyValuePair<string, Exception> kvp in result.FailedTables) {
-						log.Error(String.Format("    {0}: {1}", kvp.Key, kvp.Value.Message));
+						log.Error("    {0}: {1}", kvp.Key, kvp.Value.Message);
 					}
 					MessageBox.Show(String.Format("{0}\n\n{1} {2}", msgCompleted, msgErrors, String.Join(", ", result.FailedTables.Keys.ToArray())));
 				}
@@ -319,8 +312,8 @@ namespace DbCopy
 			barProgress.Value = barProgress.Minimum;
 			textProgress.Text = "";
 
-			if (delayedShutdown) {
-				delayedShutdown = false;
+			if (delayShutdown) {
+				delayShutdown = false;
 				Close();
 			}
 		}
@@ -328,12 +321,12 @@ namespace DbCopy
 
 		private void sbc_SqlRowsCopied(object sender, SqlRowsCopiedEventArgs e)
 		{
-			log.Debug(String.Format("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy) sender).DestinationTableName));
+			log.Debug("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy) sender).DestinationTableName);
 
 			double percentProgress = 100.0;
-			if (currentTableRows > 0) {
+			if (rowsInCurrentTable > 0) {
 				//Using Math.Min because its possible to calculate > 100% since neither row-counts can be guaranteed for accuracy
-				percentProgress = Math.Min(((double)e.RowsCopied / currentTableRows * 100), 100.0);
+				percentProgress = Math.Min(((double)e.RowsCopied / rowsInCurrentTable * 100), 100.0);
 			}
 
 			//Report progress to the UI; for increased granularity, multiply by 1000 and divide later since ReportProgress only supports integers
@@ -434,7 +427,7 @@ namespace DbCopy
 				btnCancel.Content = "Closing...";
 				worker.CancelAsync();
 				e.Cancel = true;
-				delayedShutdown = true;
+				delayShutdown = true;
 			}
 		}
 
@@ -459,5 +452,16 @@ namespace DbCopy
 		private const string Query_DeleteAllInTable = @"delete from {0}";
 
 		private const string Query_TruncateTable = @"truncate table {0}";
+
+
+		private bool delayShutdown;
+
+		private long rowsInCurrentTable;
+
+		private readonly BackgroundWorker worker = new BackgroundWorker();
+
+		private static readonly NLog.Logger log = NLog.LogManager.GetCurrentClassLogger();
+
 	}
+
 }
