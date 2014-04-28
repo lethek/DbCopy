@@ -69,13 +69,17 @@ namespace DbCopy
 						ConnectTimeout = 3
 					};
 
-					using (var connDest = new SqlConnection(cbDest.ConnectionString))
-					using (var cmdDest = new SqlCommand(Query_SelectTableNames, connDest)) {
+					using (var connDest = new SqlConnection(cbDest.ConnectionString)) {
 						connDest.Open();
-						using (var reader = cmdDest.ExecuteReader()) {
-							destTableNames = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-							while (reader.Read()) {
-								destTableNames.Add(reader["TableNames"].ToString());
+						string query = (GetEngineEdition(connDest) == SqlEngineEdition.Azure)
+							? Query_SelectTableNamesAzure
+							: Query_SelectTableNames;
+						using (var cmdDest = new SqlCommand(query, connDest)) {
+							using (var reader = cmdDest.ExecuteReader()) {
+								destTableNames = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+								while (reader.Read()) {
+									destTableNames.Add(reader["TableNames"].ToString());
+								}
 							}
 						}
 					}
@@ -97,28 +101,32 @@ namespace DbCopy
 					Encrypt = chkSourceEncrypt.IsChecked.HasValue && chkSourceEncrypt.IsChecked.Value
 				};
 
-				using (var connSource = new SqlConnection(cbSource.ConnectionString))
-				using (var cmdSource = new SqlCommand(Query_SelectTableDetails, connSource)) {
+				using (var connSource = new SqlConnection(cbSource.ConnectionString)) {
 					connSource.Open();
-					using (var reader = cmdSource.ExecuteReader()) {
-						while (reader.Read()) {
-							string tableName = reader["TableNames"].ToString();
-							var item = new ListBoxItem {
-								Content = tableName,
-								Tag = Convert.ToInt64(reader["Rows"])
-							};
+					string query = (GetEngineEdition(connSource) == SqlEngineEdition.Azure)
+						? Query_SelectTableDetailsAzure
+						: Query_SelectTableDetails;
+					using (var cmdSource = new SqlCommand(query, connSource)) {
+						using (var reader = cmdSource.ExecuteReader()) {
+							while (reader.Read()) {
+								string tableName = reader["TableNames"].ToString();
+								var item = new ListBoxItem {
+									Content = tableName,
+									Tag = Convert.ToInt64(reader["Rows"])
+								};
 
-							//Colourize source table names depending on if they're found or not found in the destination db
-							if (destTableNames != null) {
-								if (!destTableNames.Contains(tableName)) {
-									item.Foreground = Brushes.Red;
-									item.FontWeight = FontWeights.Bold;
-								} else {
-									item.Foreground = Brushes.DarkBlue;
+								//Colourize source table names depending on if they're found or not found in the destination db
+								if (destTableNames != null) {
+									if (!destTableNames.Contains(tableName)) {
+										item.Foreground = Brushes.Red;
+										item.FontWeight = FontWeights.Bold;
+									} else {
+										item.Foreground = Brushes.DarkBlue;
+									}
 								}
-							}
 
-							lstTables.Items.Add(item);
+								lstTables.Items.Add(item);
+							}
 						}
 					}
 				}
@@ -186,7 +194,7 @@ namespace DbCopy
 			var result = new BulkCopyResult();
 			e.Result = result;
 
-			var parameters = (BulkCopyParameters) e.Argument;
+			var parameters = (BulkCopyParameters)e.Argument;
 
 			try {
 				connSource = new SqlConnection(parameters.Source.ConnectionString);
@@ -277,7 +285,7 @@ namespace DbCopy
 
 		private void BulkCopy_ProgressChanged(object sender, ProgressChangedEventArgs e)
 		{
-			barProgress.Value = (double)e.ProgressPercentage/1000;
+			barProgress.Value = (double)e.ProgressPercentage / 1000;
 			textProgress.Text = (string)e.UserState;
 		}
 
@@ -327,7 +335,7 @@ namespace DbCopy
 
 		private void sbc_SqlRowsCopied(object sender, SqlRowsCopiedEventArgs e)
 		{
-			log.Debug("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy) sender).DestinationTableName);
+			log.Debug("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy)sender).DestinationTableName);
 
 			double percentProgress = 100.0;
 			if (rowsInCurrentTable > 0) {
@@ -451,20 +459,56 @@ namespace DbCopy
 		}
 
 
+		private SqlEngineEdition GetEngineEdition(SqlConnection conn)
+		{
+			using (var cmd = new SqlCommand(Query_SelectEngineEdition, conn)) {
+				var edition = cmd.ExecuteScalar();
+				if (edition != null) {
+					return (SqlEngineEdition)edition;
+				}
+			}
+			throw new Exception("Could not determine SQL Server edition");
+		}
+
+
 		private const string Query_SelectTableNames = @"
-				select QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames
+				select
+					QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames
 				from sysobjects so
 				inner join sysusers su on so.uid = su.uid
 				where so.xtype = 'U'
 				order by TableNames";
 
 		private const string Query_SelectTableDetails = @"
-				select QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames, si.rows as Rows
+				select
+					QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames,
+					si.rows as Rows
 				from sysobjects so
 				inner join sysusers su on so.uid = su.uid
 				inner join sysindexes si on si.id = so.id
 				where si.indid < 2 and so.xtype = 'U'
 				order by TableNames";
+
+		private const string Query_SelectTableNamesAzure = @"
+				select
+					QUOTENAME(s.name) + '.' + QUOTENAME(t.name) as TableNames
+				from sys.tables t
+				join sys.schemas s on s.schema_id = t.schema_id
+				where t.type = 'U'
+				order by TableNames";
+
+		private const string Query_SelectTableDetailsAzure = @"
+				select
+					QUOTENAME(s.name) + '.' + QUOTENAME(t.name) as TableNames,
+					sum(ps.row_count) as Rows
+				from sys.tables t
+				join sys.schemas s on s.schema_id = t.schema_id
+				join sys.dm_db_partition_stats ps on ps.object_id = t.object_id
+				where t.type = 'U'
+				group by s.name, t.name
+				order by TableNames";
+
+		private const string Query_SelectEngineEdition = @"select SERVERPROPERTY('EngineEdition')";
 
 		private const string Query_SelectAllInTable = @"select * from {0}";
 
