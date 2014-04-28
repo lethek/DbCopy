@@ -25,10 +25,12 @@ namespace DbCopy
 			txtSourceCatalog.Text = Settings.Default.SourceCatalog;
 			txtSourceUser.Text = Settings.Default.SourceUsername;
 			txtSourcePass.Text = Settings.Default.SourcePassword;
+			chkSourceEncrypt.IsChecked = Settings.Default.SourceEncrypt;
 			txtDestServer.Text = Settings.Default.DestServer;
 			txtDestCatalog.Text = Settings.Default.DestCatalog;
 			txtDestUser.Text = Settings.Default.DestUsername;
 			txtDestPass.Text = Settings.Default.DestPassword;
+			chkDestEncrypt.IsChecked = Settings.Default.DestEncrypt;
 
 			worker.WorkerReportsProgress = true;
 			worker.WorkerSupportsCancellation = true;
@@ -63,6 +65,7 @@ namespace DbCopy
 						IntegratedSecurity = (txtDestUser.Text == ""),
 						UserID = txtDestUser.Text,
 						Password = (txtDestUser.Text != "" ? txtDestPass.Text : ""),
+						Encrypt = chkDestEncrypt.IsChecked.HasValue && chkDestEncrypt.IsChecked.Value,
 						ConnectTimeout = 3
 					};
 
@@ -90,7 +93,8 @@ namespace DbCopy
 					InitialCatalog = txtSourceCatalog.Text,
 					IntegratedSecurity = (txtSourceUser.Text == ""),
 					UserID = txtSourceUser.Text,
-					Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : "")
+					Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : ""),
+					Encrypt = chkSourceEncrypt.IsChecked.HasValue && chkSourceEncrypt.IsChecked.Value
 				};
 
 				using (var connSource = new SqlConnection(cbSource.ConnectionString))
@@ -139,7 +143,8 @@ namespace DbCopy
 				InitialCatalog = txtSourceCatalog.Text,
 				IntegratedSecurity = (txtSourceUser.Text == ""),
 				UserID = txtSourceUser.Text,
-				Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : "")
+				Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : ""),
+				Encrypt = chkSourceEncrypt.IsChecked.HasValue && chkSourceEncrypt.IsChecked.Value
 			};
 
 			var cbDest = new SqlConnectionStringBuilder {
@@ -147,7 +152,8 @@ namespace DbCopy
 				InitialCatalog = txtDestCatalog.Text,
 				IntegratedSecurity = (txtDestUser.Text == ""),
 				UserID = txtDestUser.Text,
-				Password = (txtDestUser.Text != "" ? txtDestPass.Text : "")
+				Password = (txtDestUser.Text != "" ? txtDestPass.Text : ""),
+				Encrypt = chkDestEncrypt.IsChecked.HasValue && chkDestEncrypt.IsChecked.Value
 			};
 
 			var tables = new SortedList<string, long>(lstTables.SelectedItems.Count);
@@ -381,8 +387,19 @@ namespace DbCopy
 			btnBulkCopy.IsEnabled = CanBulkCopy();
 		}
 
+		private void chkDestEncrypt_OnChecked(object sender, RoutedEventArgs e)
+		{
+			btnBulkCopy.IsEnabled = CanBulkCopy();
+		}
 
 		private void txtSource_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			btnBulkCopy.IsEnabled = false;
+			btnConnect.IsEnabled = CanConnect();
+			lstTables.Items.Clear();
+		}
+
+		private void chkSourceEncrypt_OnChecked(object sender, RoutedEventArgs e)
 		{
 			btnBulkCopy.IsEnabled = false;
 			btnConnect.IsEnabled = CanConnect();
@@ -416,10 +433,12 @@ namespace DbCopy
 			Settings.Default.SourceCatalog = txtSourceCatalog.Text;
 			Settings.Default.SourceUsername = txtSourceUser.Text;
 			Settings.Default.SourcePassword = txtSourcePass.Text;
+			Settings.Default.SourceEncrypt = chkSourceEncrypt.IsChecked.HasValue && chkSourceEncrypt.IsChecked.Value;
 			Settings.Default.DestServer = txtDestServer.Text;
 			Settings.Default.DestCatalog = txtDestCatalog.Text;
 			Settings.Default.DestUsername = txtDestUser.Text;
 			Settings.Default.DestPassword = txtDestPass.Text;
+			Settings.Default.DestEncrypt = chkDestEncrypt.IsChecked.HasValue && chkDestEncrypt.IsChecked.Value;
 			Settings.Default.Save();
 
 			if (worker.IsBusy && !worker.CancellationPending) {

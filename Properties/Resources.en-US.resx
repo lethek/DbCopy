@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="btnBulkCopy_Content" xml:space="preserve">
     <value>_Bulk Copy</value>
@@ -125,6 +125,12 @@
   </data>
   <data name="btnConnect_Content" xml:space="preserve">
     <value>Co_nnect</value>
+  </data>
+  <data name="chkDestEncrypt_Content" xml:space="preserve">
+    <value>Encrypted connection</value>
+  </data>
+  <data name="chkSourceEncrypt_Content" xml:space="preserve">
+    <value>Encrypted connection</value>
   </data>
   <data name="grpDest_Header" xml:space="preserve">
     <value>Destination</value>
