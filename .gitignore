@@ -2,17 +2,26 @@
 
 # Project Agnostic
 .svn/
-/_ReSharper.*/
+_ReSharper.*/
+/_UpgradeReport_Files/
 *.suo
 *.bak
 *.[Cc]ache
 *.user
 *.ncb
-*.resharper
+*.schemaview
+*.[Rr]e[Ss]harper
 *.FileListAbsolute.txt
 Ankh.NoLoad
+[Tt]humbs.db
+/UpgradeLog.XML
+/UpgradeLog.htm
+*.log
+*.dbmdl
+*.docstates
 
 # Project Specific
+/[Pp]ackages/*/
 log.txt
 log.txt.*
 
