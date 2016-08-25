@@ -132,7 +132,7 @@ namespace DbCopy
 				}
 
 			} catch (Exception ex) {
-				log.Error(ex.Message, ex);
+				log.Error(ex, ex.Message);
 				MessageBox.Show(ex.Message);
 			}
 		}
@@ -247,21 +247,14 @@ namespace DbCopy
 
 						transaction.Commit();
 
-						log.Info("Copied approximately {0} rows to {1}", parameters.Tables[sTableName], sTableName);
+						log.Info($"Copied approximately {parameters.Tables[sTableName]} rows to {sTableName}");
 
 					} catch (Exception ex) {
 						result.FailedTables[sTableName] = ex;
-						if (transaction != null) {
-							transaction.Rollback();
-						}
-
+						transaction?.Rollback();
 					} finally {
-						if (bulkCopy != null) {
-							bulkCopy.Close();
-						}
-						if (reader != null) {
-							reader.Close();
-						}
+						bulkCopy?.Close();
+						reader?.Close();
 					}
 
 					if (worker.CancellationPending) {
@@ -271,12 +264,8 @@ namespace DbCopy
 				}
 
 			} finally {
-				if (connDest != null) {
-					connDest.Close();
-				}
-				if (connSource != null) {
-					connSource.Close();
-				}
+				connDest?.Close();
+				connSource?.Close();
 				sw.Stop();
 				result.Elapsed = sw.Elapsed;
 			}
@@ -296,7 +285,7 @@ namespace DbCopy
 			btnCancel.Content = "_Cancel";
 
 			if (e.Error != null) {
-				log.Error(e.Error.Message, e.Error);
+				log.Error(e.Error, e.Error.Message);
 				MessageBox.Show(e.Error.Message);
 
 			} else if (e.Cancelled) {
@@ -308,18 +297,18 @@ namespace DbCopy
 					return;
 				}
 
-				string msgCompleted = String.Format("Bulk copy operation completed in {0} ms", result.Elapsed.TotalMilliseconds);
+				string msgCompleted = $"Bulk copy operation completed in {result.Elapsed.TotalMilliseconds} ms";
 				log.Info(msgCompleted);
 
 				if (result.FailedTables.Count == 0) {
 					MessageBox.Show(msgCompleted);
 				} else {
-					string msgErrors = String.Format("The following tables failed to copy:");
+					string msgErrors = "The following tables failed to copy:";
 					log.Error(msgErrors);
 					foreach (KeyValuePair<string, Exception> kvp in result.FailedTables) {
-						log.Error("    {0}: {1}", kvp.Key, kvp.Value.Message);
+						log.Error($"    {kvp.Key}: {kvp.Value.Message}");
 					}
-					MessageBox.Show(String.Format("{0}\n\n{1} {2}", msgCompleted, msgErrors, String.Join(", ", result.FailedTables.Keys.ToArray())));
+					MessageBox.Show($"{msgCompleted}\n\n{msgErrors} {String.Join(", ", result.FailedTables.Keys.ToArray())}");
 				}
 			}
 
