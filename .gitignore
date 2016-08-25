@@ -2,6 +2,7 @@
 
 # Project Agnostic
 .svn/
+.vs/
 _ReSharper.*/
 /_UpgradeReport_Files/
 *.suo

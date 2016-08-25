@@ -32,6 +32,8 @@ namespace DbCopy
 			txtDestPass.Text = Settings.Default.DestPassword;
 			chkDestEncrypt.IsChecked = Settings.Default.DestEncrypt;
 
+			txtCustomQuery.Text = Query_SelectAllInTable;
+
 			worker.WorkerReportsProgress = true;
 			worker.WorkerSupportsCancellation = true;
 			worker.DoWork += BulkCopy_DoWork;
@@ -132,7 +134,7 @@ namespace DbCopy
 				}
 
 			} catch (Exception ex) {
-				log.Error(ex, ex.Message);
+				Log.Error(ex, ex.Message);
 				MessageBox.Show(ex.Message);
 			}
 		}
@@ -215,7 +217,9 @@ namespace DbCopy
 					try {
 						transaction = connDest.BeginTransaction();
 
-						reader = new SqlCommand(String.Format(Query_SelectAllInTable, sTableName), connSource) { CommandTimeout = 9000 }.ExecuteReader();
+						string query = String.Format(expander.IsExpanded ? txtCustomQuery.Text : Query_SelectAllInTable, sTableName);
+
+						reader = new SqlCommand(query, connSource) { CommandTimeout = 9000 }.ExecuteReader();
 
 						//TODO: any FKs should be dropped and then recreated after truncating
 						try {
@@ -247,7 +251,7 @@ namespace DbCopy
 
 						transaction.Commit();
 
-						log.Info($"Copied approximately {parameters.Tables[sTableName]} rows to {sTableName}");
+						Log.Info($"Copied approximately {parameters.Tables[sTableName]} rows to {sTableName}");
 
 					} catch (Exception ex) {
 						result.FailedTables[sTableName] = ex;
@@ -285,11 +289,11 @@ namespace DbCopy
 			btnCancel.Content = "_Cancel";
 
 			if (e.Error != null) {
-				log.Error(e.Error, e.Error.Message);
+				Log.Error(e.Error, e.Error.Message);
 				MessageBox.Show(e.Error.Message);
 
 			} else if (e.Cancelled) {
-				log.Info("Bulk copy operation cancelled");
+				Log.Info("Bulk copy operation cancelled");
 
 			} else {
 				var result = e.Result as BulkCopyResult;
@@ -298,15 +302,15 @@ namespace DbCopy
 				}
 
 				string msgCompleted = $"Bulk copy operation completed in {result.Elapsed.TotalMilliseconds} ms";
-				log.Info(msgCompleted);
+				Log.Info(msgCompleted);
 
 				if (result.FailedTables.Count == 0) {
 					MessageBox.Show(msgCompleted);
 				} else {
 					string msgErrors = "The following tables failed to copy:";
-					log.Error(msgErrors);
+					Log.Error(msgErrors);
 					foreach (KeyValuePair<string, Exception> kvp in result.FailedTables) {
-						log.Error($"    {kvp.Key}: {kvp.Value.Message}");
+						Log.Error($"    {kvp.Key}: {kvp.Value.Message}");
 					}
 					MessageBox.Show($"{msgCompleted}\n\n{msgErrors} {String.Join(", ", result.FailedTables.Keys.ToArray())}");
 				}
@@ -324,7 +328,7 @@ namespace DbCopy
 
 		private void sbc_SqlRowsCopied(object sender, SqlRowsCopiedEventArgs e)
 		{
-			log.Debug("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy)sender).DestinationTableName);
+			Log.Debug($"Copied up to {e.RowsCopied} rows to {((SqlBulkCopy)sender).DestinationTableName}");
 
 			double percentProgress = 100.0;
 			if (rowsInCurrentTable > 0) {
@@ -384,10 +388,12 @@ namespace DbCopy
 			btnBulkCopy.IsEnabled = CanBulkCopy();
 		}
 
+
 		private void chkDestEncrypt_OnChecked(object sender, RoutedEventArgs e)
 		{
 			btnBulkCopy.IsEnabled = CanBulkCopy();
 		}
+
 
 		private void txtSource_TextChanged(object sender, TextChangedEventArgs e)
 		{
@@ -396,11 +402,39 @@ namespace DbCopy
 			lstTables.Items.Clear();
 		}
 
+
 		private void chkSourceEncrypt_OnChecked(object sender, RoutedEventArgs e)
 		{
 			btnBulkCopy.IsEnabled = false;
 			btnConnect.IsEnabled = CanConnect();
 			lstTables.Items.Clear();
+		}
+
+
+		private void btnResetQuery_Click(object sender, RoutedEventArgs e)
+		{
+			txtCustomQuery.Text = Query_SelectAllInTable;
+			txtCustomQuery.CaretIndex = txtCustomQuery.Text.Length;
+			Keyboard.Focus(txtCustomQuery);
+		}
+
+
+		private void expander_Expanded(object sender, RoutedEventArgs e)
+		{
+			lstTables.SelectionMode = SelectionMode.Single;
+		}
+
+
+		private void expander_Collapsed(object sender, RoutedEventArgs e)
+		{
+			lstTables.SelectionMode = SelectionMode.Extended;
+		}
+
+
+		private void txtCustomQuery_OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+		{
+			txtCustomQuery.CaretIndex = txtCustomQuery.Text.Length;
+			Keyboard.Focus(txtCustomQuery);
 		}
 
 
@@ -512,7 +546,7 @@ namespace DbCopy
 
 		private readonly BackgroundWorker worker = new BackgroundWorker();
 
-		private static readonly NLog.Logger log = NLog.LogManager.GetCurrentClassLogger();
+		private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
 
 	}
 

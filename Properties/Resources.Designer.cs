@@ -106,6 +106,15 @@ namespace DbCopy.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Custom Query.
+        /// </summary>
+        public static string expander_Header {
+            get {
+                return ResourceManager.GetString("expander_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Destination.
         /// </summary>
         public static string grpDest_Header {

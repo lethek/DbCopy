@@ -5,46 +5,77 @@
 	lex:LocalizeDictionary.DesignCulture="en-US"
 	lex:ResxLocalizationProvider.DefaultAssembly="AssemblyTestResourceLib"
 	lex:ResxLocalizationProvider.DefaultDictionary="Strings"
-    Title="DbCopy" Height="401" Width="564" WindowStyle="SingleBorderWindow" KeyDown="Window_KeyDown" Closing="Window_Closing">
-	<Grid Width="Auto">
-		<GroupBox Header="{lex:Loc DbCopy:Resources:grpSource_Header}" Margin="10,12,0,0" Name="grpSource" Height="143" VerticalAlignment="Top" HorizontalAlignment="Left" Width="286">
-			<Grid Margin="0,0,0,6">
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="0*" />
-					<ColumnDefinition Width="96*" />
-					<ColumnDefinition Width="34*"/>
-					<ColumnDefinition Width="7*" />
-					<ColumnDefinition Width="137*" />
-				</Grid.ColumnDefinitions>
-				<Label Height="28" Margin="6,10,28,0" Name="lblSourceServer" VerticalAlignment="Top" Grid.Column="1" Content="{lex:Loc DbCopy:Resources:lblSourceServer_Content}" />
-				<TextBox Height="23" Margin="62,10,4,0" Name="txtSourceServer" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="4" TextChanged="txtSource_TextChanged" />
-				<Label Margin="6,38,28,49" Name="lblSourceCatalog" Grid.Column="1" Content="{lex:Loc DbCopy:Resources:lblSourceCatalog_Content}" />
-				<TextBox Margin="62,39,4,0" Name="txtSourceCatalog" Grid.Column="1" Height="21" VerticalAlignment="Top" Grid.ColumnSpan="4" TextChanged="txtSource_TextChanged" />
-				<TextBox Height="23" Margin="6,66,6,0" Name="txtSourceUser" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="3" TextChanged="txtSource_TextChanged" ToolTip="{lex:Loc DbCopy:Resources:txtSourceUser_ToolTip}" />
-				<TextBox Height="23" Margin="0,66,4,0" Name="txtSourcePass" VerticalAlignment="Top" Grid.Column="4" TextChanged="txtSource_TextChanged" ToolTip="{lex:Loc DbCopy:Resources:txtSourcePass_ToolTip}" />
-				<CheckBox Name="chkSourceEncrypt" Grid.ColumnSpan="5" Content="{lex:Loc DbCopy:Resources:chkSourceEncrypt_Content}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,97,0,0" Width="262" Checked="chkSourceEncrypt_OnChecked" />
+    Title="DbCopy" Height="400" Width="600" MinHeight="400" MinWidth="600" WindowStyle="SingleBorderWindow" KeyDown="Window_KeyDown" Closing="Window_Closing">
+	<Grid>
+		<Grid Width="Auto" Margin="0,0,0,23">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="294" MinWidth="294" />
+				<ColumnDefinition Width="Auto" />
+				<ColumnDefinition Width="*" MinWidth="100" />
+			</Grid.ColumnDefinitions>
+
+			<Grid>
+				<GroupBox Header="{lex:Loc DbCopy:Resources:grpSource_Header}" Margin="10,12,4,0" Name="grpSource" Height="143" VerticalAlignment="Top" Grid.ColumnSpan="2">
+					<Grid Margin="0,0,0,6">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="0*" />
+							<ColumnDefinition Width="96*" />
+							<ColumnDefinition Width="34*"/>
+							<ColumnDefinition Width="7*" />
+							<ColumnDefinition Width="137*" />
+						</Grid.ColumnDefinitions>
+						<Label Height="28" Margin="6,10,0,0" Name="lblSourceServer" VerticalAlignment="Top" Grid.Column="1" Content="{lex:Loc DbCopy:Resources:lblSourceServer_Content}" HorizontalAlignment="Left" Width="62" />
+						<TextBox Height="23" Margin="62,10,4,0" Name="txtSourceServer" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="4" TextChanged="txtSource_TextChanged" />
+						<Label Margin="6,38,0,49" Name="lblSourceCatalog" Grid.Column="1" Content="{lex:Loc DbCopy:Resources:lblSourceCatalog_Content}" HorizontalAlignment="Left" Width="62" />
+						<TextBox Margin="62,39,4,0" Name="txtSourceCatalog" Grid.Column="1" Height="21" VerticalAlignment="Top" Grid.ColumnSpan="4" TextChanged="txtSource_TextChanged" />
+						<TextBox Height="23" Margin="6,66,6,0" Name="txtSourceUser" VerticalAlignment="Top" Grid.Column="1" Grid.ColumnSpan="3" TextChanged="txtSource_TextChanged" ToolTip="{lex:Loc DbCopy:Resources:txtSourceUser_ToolTip}" />
+						<TextBox Height="23" Margin="0,66,4,0" Name="txtSourcePass" VerticalAlignment="Top" Grid.Column="4" TextChanged="txtSource_TextChanged" ToolTip="{lex:Loc DbCopy:Resources:txtSourcePass_ToolTip}" />
+						<CheckBox Name="chkSourceEncrypt" Grid.ColumnSpan="5" Content="{lex:Loc DbCopy:Resources:chkSourceEncrypt_Content}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,97,0,0" Width="262" Checked="chkSourceEncrypt_OnChecked" />
+					</Grid>
+				</GroupBox>
+				<GroupBox Header="{lex:Loc DbCopy:Resources:grpDest_Header}" Margin="10,160,4,0" Name="grpDest" Height="142" VerticalAlignment="Top" Grid.ColumnSpan="2">
+					<Grid Margin="0,0,0,6">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="142.443*" />
+							<ColumnDefinition Width="7.497*" />
+							<ColumnDefinition Width="151.417*" />
+						</Grid.ColumnDefinitions>
+						<Label Height="28" Margin="6,6,0,0" Name="lblDestServer" VerticalAlignment="Top" Content="{lex:Loc DbCopy:Resources:lblDestServer_Content}" HorizontalAlignment="Left" Width="61" />
+						<TextBox Height="23" Margin="61.646,6,5.831,0" Name="txtDestServer" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
+						<Label Margin="6,35,62,49" Name="lblDestCatalog" Content="{lex:Loc DbCopy:Resources:lblDestCatalog_Content}" />
+						<TextBox Margin="61.646,34.986,5.831,0" Name="txtDestCatalog" Height="24.006" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
+						<TextBox Height="23" Margin="5.831,65.147,0,0" Name="txtDestUser" VerticalAlignment="Top" ToolTip="{lex:Loc DbCopy:Resources:txtDestUser_ToolTip}" />
+						<TextBox Height="23" Margin="5.831,65.147,4.998,0" Name="txtDestPass" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" ToolTip="{lex:Loc DbCopy:Resources:txtDestPass_ToolTip}" />
+						<CheckBox Name="chkDestEncrypt" Grid.ColumnSpan="5" Content="{lex:Loc DbCopy:Resources:chkDestEncrypt_Content}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,97,0,0" Width="262" Checked="chkDestEncrypt_OnChecked" />
+					</Grid>
+				</GroupBox>
+
+				<Button Height="23" HorizontalAlignment="Left" Margin="12,0,0,7" Name="btnConnect" VerticalAlignment="Bottom" Width="76" Click="btnConnect_Click" IsEnabled="False" Content="{lex:Loc DbCopy:Resources:btnConnect_Content}" />
+				<Button Height="23" Margin="94,0,0,7" Name="btnBulkCopy" VerticalAlignment="Bottom" Click="btnBulkCopy_Click" HorizontalAlignment="Left" Width="75" IsEnabled="False" Content="{lex:Loc DbCopy:Resources:btnBulkCopy_Content}" />
+				<Button Height="23" Margin="176,0,0,7" Name="btnCancel" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="74" Click="btnCancel_Click" IsEnabled="False" Content="{lex:Loc DbCopy:Resources:btnCancel_Content}" />
 			</Grid>
-		</GroupBox>
-		<GroupBox Header="{lex:Loc DbCopy:Resources:grpDest_Header}" Margin="10,160,0,0" Name="grpDest" HorizontalAlignment="Left" Width="286" Height="142" VerticalAlignment="Top">
-			<Grid Margin="0,0,0,6">
-				<Grid.ColumnDefinitions>
-					<ColumnDefinition Width="142.443*" />
-					<ColumnDefinition Width="7.497*" />
-					<ColumnDefinition Width="151.417*" />
-				</Grid.ColumnDefinitions>
-				<Label Height="28" Margin="6,6,62,0" Name="lblDestServer" VerticalAlignment="Top" Content="{lex:Loc DbCopy:Resources:lblDestServer_Content}" />
-				<TextBox Height="23" Margin="61.646,6,5.831,0" Name="txtDestServer" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
-				<Label Margin="6,35,62,49" Name="lblDestCatalog" Content="{lex:Loc DbCopy:Resources:lblDestCatalog_Content}" />
-				<TextBox Margin="61.646,34.986,5.831,0" Name="txtDestCatalog" Height="24.006" VerticalAlignment="Top" Grid.ColumnSpan="3" TextChanged="txtDest_TextChanged" />
-				<TextBox Height="23" Margin="5.831,65.147,0,0" Name="txtDestUser" VerticalAlignment="Top" ToolTip="{lex:Loc DbCopy:Resources:txtDestUser_ToolTip}" />
-				<TextBox Height="23" Margin="5.831,65.147,4.998,0" Name="txtDestPass" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="1" ToolTip="{lex:Loc DbCopy:Resources:txtDestPass_ToolTip}" />
-				<CheckBox Name="chkDestEncrypt" Grid.ColumnSpan="5" Content="{lex:Loc DbCopy:Resources:chkDestEncrypt_Content}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,97,0,0" Width="262" Checked="chkDestEncrypt_OnChecked" />
+
+			<GridSplitter x:Name="gridSplitterVertical" Grid.Column="1" HorizontalAlignment="Stretch" Width="5" />
+
+			<Grid Grid.Column="2">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="*" />
+					<RowDefinition Height="5" />
+					<RowDefinition Height="Auto" />
+				</Grid.RowDefinitions>
+
+				<ListBox Grid.Row="0" Margin="5,12,5,10" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" ToolTip="{lex:Loc DbCopy:Resources:lstTables_ToolTip}" />
+
+				<GridSplitter Grid.Row="1" x:Name="gridSplitterHorizontal" Height="5" HorizontalAlignment="Stretch" />
+
+				<Expander x:Name="expander" Header="{lex:Loc DbCopy:Resources:expander_Header}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" IsExpanded="False" Grid.Row="2" Collapsed="expander_Collapsed" Expanded="expander_Expanded">
+					<Grid Background="#FFE5E5E5">
+						<TextBox HorizontalAlignment="Stretch" VerticalAlignment="Stretch" MinHeight="23" Name="txtCustomQuery" AcceptsReturn="True" IsVisibleChanged="txtCustomQuery_OnIsVisibleChanged" Margin="0,0,30,0"></TextBox>
+						<Button x:Name="btnResetQuery" Content="X" HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="25" Click="btnResetQuery_Click"/>
+					</Grid>
+				</Expander>
 			</Grid>
-		</GroupBox>
-		<ListBox Margin="301.699,12,12,29" Name="lstTables" SelectionMode="Extended" SelectionChanged="lstTables_SelectionChanged" ToolTip="{lex:Loc DbCopy:Resources:lstTables_ToolTip}" />
-		<Button Height="23" HorizontalAlignment="Left" Margin="12,0,0,29" Name="btnConnect" VerticalAlignment="Bottom" Width="75" Click="btnConnect_Click" IsEnabled="False" Content="{lex:Loc DbCopy:Resources:btnConnect_Content}" />
-		<Button Height="23" Margin="94,0,0,29" Name="btnBulkCopy" VerticalAlignment="Bottom" Click="btnBulkCopy_Click" HorizontalAlignment="Left" Width="74.97" IsEnabled="False" Content="{lex:Loc DbCopy:Resources:btnBulkCopy_Content}" />
-		<Button Height="23" Margin="175,0,0,29" Name="btnCancel" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="74.959" Click="btnCancel_Click" IsEnabled="False" Content="{lex:Loc DbCopy:Resources:btnCancel_Content}" />
+		</Grid>
 		<Grid Height="23" VerticalAlignment="Bottom">
 			<ProgressBar Name="barProgress" Minimum="-1" Value="-1" />
 			<Viewbox>

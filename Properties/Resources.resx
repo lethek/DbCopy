@@ -132,6 +132,9 @@
   <data name="chkSourceEncrypt_Content" xml:space="preserve">
     <value>Encrypted connection</value>
   </data>
+  <data name="expander_Header" xml:space="preserve">
+    <value>Custom Query</value>
+  </data>
   <data name="grpDest_Header" xml:space="preserve">
     <value>Destination</value>
   </data>
