@@ -210,6 +210,8 @@ namespace DbCopy
 						return;
 					}
 
+					Log.Information("Copying rows to {0}", "[" + connDest.DataSource + "].[" + connDest.Database + "]." + table.FullName);
+
 					SqlTransaction transaction = null;
 					SqlBulkCopy bulkCopy = null;
 					try {
@@ -221,6 +223,7 @@ namespace DbCopy
 
 						string query = String.Format(parameters.Query, table.FullName);
 						reader = new SqlCommand(query, connSource) { CommandTimeout = 9000 }.ExecuteReader();
+						
 
 						//TODO: any FKs should be dropped and then recreated after truncating
 						try {
@@ -259,7 +262,7 @@ namespace DbCopy
 
 						transaction.Commit();
 
-						Log.Information("Copied approximately {0} rows to {1}", table.RowCount, table.FullName);
+						Log.Information("Copied approximately {0} rows to {1}", table.RowCount, "[" + connDest.DataSource + "].[" + connDest.Database + "]." + table.FullName);
 
 					} catch (Exception ex) {
 						result.FailedTables[table.FullName] = ex;
