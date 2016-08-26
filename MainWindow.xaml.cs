@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
@@ -75,17 +76,9 @@ namespace DbCopy
 
 					using (var connDest = new SqlConnection(cbDest.ConnectionString)) {
 						connDest.Open();
-						string query = (GetEngineEdition(connDest) == SqlEngineEdition.Azure)
-							? Query_SelectTableNamesAzure
-							: Query_SelectTableNames;
-						using (var cmdDest = new SqlCommand(query, connDest)) {
-							using (var reader = cmdDest.ExecuteReader()) {
-								destTableNames = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-								while (reader.Read()) {
-									destTableNames.Add(reader["TableNames"].ToString());
-								}
-							}
-						}
+						var schema = connDest.GetSchema("Tables", new[] { connDest.Database });
+						var tables = schema.AsEnumerable().Select(x => x.Field<string>("TABLE_SCHEMA") + "." + x.Field<string>("TABLE_NAME")).ToList();
+						destTableNames = new HashSet<string>(tables, StringComparer.OrdinalIgnoreCase);
 					}
 				} catch (Exception) {
 					//Ignore errors at this stage - indicate that destination table names are not available by setting the hashset to null
@@ -113,15 +106,15 @@ namespace DbCopy
 					using (var cmdSource = new SqlCommand(query, connSource)) {
 						using (var reader = cmdSource.ExecuteReader()) {
 							while (reader.Read()) {
-								string tableName = reader["TableNames"].ToString();
+								var details = new TableDetails(reader["TableSchema"].ToString(), reader["TableName"].ToString(), reader["TableFullName"].ToString(), Convert.ToInt64(reader["RowCount"]));
 								var item = new ListBoxItem {
-									Content = tableName,
-									Tag = Convert.ToInt64(reader["RowCount"])
+									Content = details.FullName,
+									Tag = details
 								};
 
 								//Colourize source table names depending on if they're found or not found in the destination db
 								if (destTableNames != null) {
-									if (!destTableNames.Contains(tableName)) {
+									if (!destTableNames.Contains($"{details.Schema}.{details.Name}")) {
 										item.Foreground = Brushes.Red;
 										item.FontWeight = FontWeights.Bold;
 									} else {
@@ -169,9 +162,9 @@ namespace DbCopy
 				Encrypt = chkDestEncrypt.IsChecked.HasValue && chkDestEncrypt.IsChecked.Value
 			};
 
-			var tables = new SortedList<string, long>(lstTables.SelectedItems.Count);
+			var tables = new SortedList<string, TableDetails>(lstTables.SelectedItems.Count);
 			foreach (ListBoxItem listItem in lstTables.SelectedItems) {
-				tables[listItem.Content.ToString()] = Convert.ToInt64(listItem.Tag);
+				tables[listItem.Content.ToString()] = (TableDetails)listItem.Tag;
 			}
 
 			string query = expander.IsExpanded ? txtCustomQuery.Text.Trim() : Query_SelectAllInTable;
@@ -211,7 +204,7 @@ namespace DbCopy
 				connDest.Open();
 
 				SqlDataReader reader = null;
-				foreach (string sTableName in parameters.Tables.Keys) {
+				foreach (var table in parameters.Tables.Values) {
 					if (worker.CancellationPending) {
 						e.Cancel = true;
 						return;
@@ -220,34 +213,44 @@ namespace DbCopy
 					SqlTransaction transaction = null;
 					SqlBulkCopy bulkCopy = null;
 					try {
+						//Use Dictionary<,> so that destination column names can be case-insensitively located in their proper case because SqlBulkCopy mappings are case-sensitive!
+						var destSchema = connDest.GetSchema("Columns", new[] {connDest.Database, table.Schema, table.Name});
+						var destColumnsMap = destSchema.AsEnumerable().Select(x => x.Field<string>("COLUMN_NAME")).ToDictionary(k => k, v => v, StringComparer.OrdinalIgnoreCase);
+
 						transaction = connDest.BeginTransaction();
 
-						string query = String.Format(parameters.Query, sTableName);
-
+						string query = String.Format(parameters.Query, table.FullName);
 						reader = new SqlCommand(query, connSource) { CommandTimeout = 9000 }.ExecuteReader();
 
 						//TODO: any FKs should be dropped and then recreated after truncating
 						try {
-							new SqlCommand(String.Format(Query_TruncateTable, sTableName), connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
+							new SqlCommand(String.Format(Query_TruncateTable, table.FullName), connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
 						} catch {
-							new SqlCommand(String.Format(Query_DeleteAllInTable, sTableName), connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
+							new SqlCommand(String.Format(Query_DeleteAllInTable, table.FullName), connDest, transaction) { CommandTimeout = 120 }.ExecuteNonQuery();
 						}
 
 						bulkCopy = new SqlBulkCopy(connDest, SqlBulkCopyOptions.KeepIdentity | SqlBulkCopyOptions.KeepNulls, transaction) {
 							BulkCopyTimeout = 9000,
 							BatchSize = 10000,
 							NotifyAfter = 10000,
-							DestinationTableName = sTableName
+							DestinationTableName = table.FullName
 						};
 						bulkCopy.SqlRowsCopied += sbc_SqlRowsCopied;
 
-						var mapColumns = bulkCopy.ColumnMappings;
+						//Iterate over the Reader to get source column names because they may be defined by query results rather than a table-schema
+						var sourceColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 						for (int i = 0; i < reader.FieldCount; i++) {
-							string sFieldName = reader.GetName(i);
-							mapColumns.Add(sFieldName, sFieldName);
+							sourceColumns.Add(reader.GetName(i));
 						}
 
-						rowsInCurrentTable = parameters.Tables[sTableName];
+						var mapColumns = bulkCopy.ColumnMappings;
+						foreach (var column in sourceColumns) {
+							if (destColumnsMap.ContainsKey(column)) {
+								mapColumns.Add(column, destColumnsMap[column]);
+							}
+						}
+
+						rowsInCurrentTable = table.RowCount;
 
 						//Make sure the progress indicators are updated immediately, so the correct progress details are shown
 						sbc_SqlRowsCopied(bulkCopy, new SqlRowsCopiedEventArgs(0));
@@ -256,10 +259,10 @@ namespace DbCopy
 
 						transaction.Commit();
 
-						Log.Information("Copied approximately {0} rows to {1}", parameters.Tables[sTableName], sTableName);
+						Log.Information("Copied approximately {0} rows to {1}", table.RowCount, table.FullName);
 
 					} catch (Exception ex) {
-						result.FailedTables[sTableName] = ex;
+						result.FailedTables[table.FullName] = ex;
 						transaction?.Rollback();
 					} finally {
 						bulkCopy?.Close();
@@ -503,42 +506,30 @@ namespace DbCopy
 		}
 
 
-		private const string Query_SelectTableNames = @"
-				select
-					QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames
-				from sysobjects so
-				inner join sysusers su on so.uid = su.uid
-				where so.xtype = 'U'
-				order by TableNames";
-
 		private const string Query_SelectTableDetails = @"
 				select
-					QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames,
+					su.name as TableSchema,
+					so.name as TableName,
+					QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableFullName,
 					si.rows as [RowCount]
 				from sysobjects so
 				inner join sysusers su on so.uid = su.uid
 				inner join sysindexes si on si.id = so.id
 				where si.indid < 2 and so.xtype = 'U'
-				order by TableNames";
-
-		private const string Query_SelectTableNamesAzure = @"
-				select
-					QUOTENAME(s.name) + '.' + QUOTENAME(t.name) as TableNames
-				from sys.tables t
-				join sys.schemas s on s.schema_id = t.schema_id
-				where t.type = 'U'
-				order by TableNames";
+				order by TableSchema, TableName";
 
 		private const string Query_SelectTableDetailsAzure = @"
 				select
-					QUOTENAME(s.name) + '.' + QUOTENAME(t.name) as TableNames,
+					s.name as TableSchema,
+					t.name as TableName,
+					QUOTENAME(s.name) + '.' + QUOTENAME(t.name) as TableFullName,
 					sum(ps.row_count) as [RowCount]
 				from sys.tables t
 				join sys.schemas s on s.schema_id = t.schema_id
 				join sys.dm_db_partition_stats ps on ps.object_id = t.object_id
 				where t.type = 'U'
 				group by s.name, t.name
-				order by TableNames";
+				order by TableSchema, TableName";
 
 		private const string Query_SelectEngineEdition = @"select SERVERPROPERTY('EngineEdition')";
 

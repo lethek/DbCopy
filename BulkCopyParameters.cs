@@ -9,10 +9,10 @@ namespace DbCopy
 	{
 		public SqlConnectionStringBuilder Source;
 		public SqlConnectionStringBuilder Destination;
-		public readonly SortedList<string, long> Tables;
+		public readonly SortedList<string, TableDetails> Tables;
 		public string Query;
 
-		public BulkCopyParameters(SqlConnectionStringBuilder source, SqlConnectionStringBuilder destination, SortedList<string, long> tables, string query)
+		public BulkCopyParameters(SqlConnectionStringBuilder source, SqlConnectionStringBuilder destination, SortedList<string, TableDetails> tables, string query)
 		{
 			Source = source;
 			Destination = destination;
