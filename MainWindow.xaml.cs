@@ -44,29 +44,28 @@ namespace DbCopy
 
 		private void btnConnect_Click(object sender, RoutedEventArgs e)
 		{
-			//TODO: Shunt this off into a separate thread
-			if (txtSourceServer.Text == "" || txtSourceCatalog.Text == "") {
+			if (!CanConnect()) {
 				return;
 			}
 
 			HashSet<string> destTableNames = null;
-
 
 			//Reset UI elements
 			barProgress.Value = barProgress.Minimum;
 			textProgress.Text = "";
 			lstTables.Items.Clear();
 
+			//TODO: move all this into a separate thread
 
 			//Try connecting to the Destination database and retrieve its list of tables
 			if (txtDestServer.Text.Length > 0 && txtDestCatalog.Text.Length > 0) {
 				try {
 					var cbDest = new SqlConnectionStringBuilder {
-						DataSource = txtDestServer.Text,
-						InitialCatalog = txtDestCatalog.Text,
-						IntegratedSecurity = (txtDestUser.Text == ""),
-						UserID = txtDestUser.Text,
-						Password = (txtDestUser.Text != "" ? txtDestPass.Text : ""),
+						DataSource = txtDestServer.Text.Trim(),
+						InitialCatalog = txtDestCatalog.Text.Trim(),
+						IntegratedSecurity = String.IsNullOrWhiteSpace(txtDestUser.Text),
+						UserID = txtDestUser.Text.Trim(),
+						Password = String.IsNullOrWhiteSpace(txtDestUser.Text) ? String.Empty : txtDestPass.Text.Trim(),
 						Encrypt = chkDestEncrypt.IsChecked.HasValue && chkDestEncrypt.IsChecked.Value,
 						ConnectTimeout = 3
 					};
@@ -95,11 +94,11 @@ namespace DbCopy
 			//Read table names and schemas and approximate row-counts from the Source database and populate the listbox with them
 			try {
 				var cbSource = new SqlConnectionStringBuilder {
-					DataSource = txtSourceServer.Text,
-					InitialCatalog = txtSourceCatalog.Text,
-					IntegratedSecurity = (txtSourceUser.Text == ""),
-					UserID = txtSourceUser.Text,
-					Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : ""),
+					DataSource = txtSourceServer.Text.Trim(),
+					InitialCatalog = txtSourceCatalog.Text.Trim(),
+					IntegratedSecurity = String.IsNullOrWhiteSpace(txtSourceUser.Text),
+					UserID = txtSourceUser.Text.Trim(),
+					Password = String.IsNullOrWhiteSpace(txtSourceUser.Text) ? String.Empty : txtSourcePass.Text.Trim(),
 					Encrypt = chkSourceEncrypt.IsChecked.HasValue && chkSourceEncrypt.IsChecked.Value
 				};
 
@@ -142,27 +141,28 @@ namespace DbCopy
 
 		private void btnBulkCopy_Click(object sender, RoutedEventArgs e)
 		{
-			if (txtSourceServer.Text == "" || txtDestServer.Text == "" || txtSourceCatalog.Text == "" || txtDestCatalog.Text == "") {
+			if (String.IsNullOrWhiteSpace(txtSourceServer.Text) || String.IsNullOrWhiteSpace(txtDestServer.Text) ||
+				String.IsNullOrWhiteSpace(txtSourceCatalog.Text) || String.IsNullOrWhiteSpace(txtDestCatalog.Text)) {
 				return;
 			}
 
 			EnableForm(false);
 
 			var cbSource = new SqlConnectionStringBuilder {
-				DataSource = txtSourceServer.Text,
-				InitialCatalog = txtSourceCatalog.Text,
-				IntegratedSecurity = (txtSourceUser.Text == ""),
-				UserID = txtSourceUser.Text,
-				Password = (txtSourceUser.Text != "" ? txtSourcePass.Text : ""),
+				DataSource = txtSourceServer.Text.Trim(),
+				InitialCatalog = txtSourceCatalog.Text.Trim(),
+				IntegratedSecurity = String.IsNullOrWhiteSpace(txtSourceUser.Text),
+				UserID = txtSourceUser.Text.Trim(),
+				Password = String.IsNullOrWhiteSpace(txtSourceUser.Text) ? String.Empty : txtSourcePass.Text.Trim(),
 				Encrypt = chkSourceEncrypt.IsChecked.HasValue && chkSourceEncrypt.IsChecked.Value
 			};
 
 			var cbDest = new SqlConnectionStringBuilder {
-				DataSource = txtDestServer.Text,
-				InitialCatalog = txtDestCatalog.Text,
-				IntegratedSecurity = (txtDestUser.Text == ""),
-				UserID = txtDestUser.Text,
-				Password = (txtDestUser.Text != "" ? txtDestPass.Text : ""),
+				DataSource = txtDestServer.Text.Trim(),
+				InitialCatalog = txtDestCatalog.Text.Trim(),
+				IntegratedSecurity = String.IsNullOrWhiteSpace(txtDestUser.Text),
+				UserID = txtDestUser.Text.Trim(),
+				Password = String.IsNullOrWhiteSpace(txtDestUser.Text) ? String.Empty : txtDestPass.Text.Trim(),
 				Encrypt = chkDestEncrypt.IsChecked.HasValue && chkDestEncrypt.IsChecked.Value
 			};
 
@@ -171,7 +171,7 @@ namespace DbCopy
 				tables[listItem.Content.ToString()] = Convert.ToInt64(listItem.Tag);
 			}
 
-			string query = expander.IsExpanded ? txtCustomQuery.Text : Query_SelectAllInTable;
+			string query = expander.IsExpanded ? txtCustomQuery.Text.Trim() : Query_SelectAllInTable;
 
 			worker.RunWorkerAsync(new BulkCopyParameters(cbSource, cbDest, tables, query));
 		}
@@ -353,7 +353,7 @@ namespace DbCopy
 		/// <returns>True if a source has been specified, False otherwise.</returns>
 		private bool CanConnect()
 		{
-			return txtSourceServer.Text.Trim() != "" && txtSourceCatalog.Text.Trim() != "";
+			return !String.IsNullOrWhiteSpace(txtSourceServer.Text) && !String.IsNullOrWhiteSpace(txtSourceCatalog.Text);
 		}
 
 
@@ -370,12 +370,15 @@ namespace DbCopy
 			string srcCatalogText = txtSourceCatalog.Text.Trim();
 			string dstCatalogText = txtDestCatalog.Text.Trim();
 
-			//CanConnect check should be superfluous here due to the txtSource.TextChanged event, but it's added for clarity
 			return CanConnect() &&
 				lstTables.SelectedItems.Count > 0 &&
-				dstServerText != "" &&
-				dstCatalogText != "" &&
-				!(srcServerText == dstServerText && srcCatalogText == dstCatalogText);
+				!String.IsNullOrWhiteSpace(dstServerText) &&
+				!String.IsNullOrWhiteSpace(dstCatalogText) &&
+				!(
+					String.Equals(srcServerText, dstServerText, StringComparison.InvariantCultureIgnoreCase) &&
+					String.Equals(srcCatalogText, dstCatalogText, StringComparison.InvariantCultureIgnoreCase)
+				);
+			
 		}
 
 
@@ -462,15 +465,15 @@ namespace DbCopy
 		private void Window_Closing(object sender, CancelEventArgs e)
 		{
 			//Save config
-			Settings.Default.SourceServer = txtSourceServer.Text;
-			Settings.Default.SourceCatalog = txtSourceCatalog.Text;
-			Settings.Default.SourceUsername = txtSourceUser.Text;
-			Settings.Default.SourcePassword = txtSourcePass.Text;
+			Settings.Default.SourceServer = txtSourceServer.Text.Trim();
+			Settings.Default.SourceCatalog = txtSourceCatalog.Text.Trim();
+			Settings.Default.SourceUsername = txtSourceUser.Text.Trim();
+			Settings.Default.SourcePassword = txtSourcePass.Text.Trim();
 			Settings.Default.SourceEncrypt = chkSourceEncrypt.IsChecked.HasValue && chkSourceEncrypt.IsChecked.Value;
-			Settings.Default.DestServer = txtDestServer.Text;
-			Settings.Default.DestCatalog = txtDestCatalog.Text;
-			Settings.Default.DestUsername = txtDestUser.Text;
-			Settings.Default.DestPassword = txtDestPass.Text;
+			Settings.Default.DestServer = txtDestServer.Text.Trim();
+			Settings.Default.DestCatalog = txtDestCatalog.Text.Trim();
+			Settings.Default.DestUsername = txtDestUser.Text.Trim();
+			Settings.Default.DestPassword = txtDestPass.Text.Trim();
 			Settings.Default.DestEncrypt = chkDestEncrypt.IsChecked.HasValue && chkDestEncrypt.IsChecked.Value;
 			Settings.Default.Save();
 
