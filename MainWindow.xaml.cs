@@ -114,7 +114,7 @@ namespace DbCopy
 								string tableName = reader["TableNames"].ToString();
 								var item = new ListBoxItem {
 									Content = tableName,
-									Tag = Convert.ToInt64(reader["Rows"])
+									Tag = Convert.ToInt64(reader["RowCount"])
 								};
 
 								//Colourize source table names depending on if they're found or not found in the destination db
@@ -167,11 +167,13 @@ namespace DbCopy
 			};
 
 			var tables = new SortedList<string, long>(lstTables.SelectedItems.Count);
-			foreach (ListBoxItem itmTable in lstTables.SelectedItems) {
-				tables[itmTable.Content.ToString()] = Convert.ToInt64(itmTable.Tag);
+			foreach (ListBoxItem listItem in lstTables.SelectedItems) {
+				tables[listItem.Content.ToString()] = Convert.ToInt64(listItem.Tag);
 			}
 
-			worker.RunWorkerAsync(new BulkCopyParameters(cbSource, cbDest, tables));
+			string query = expander.IsExpanded ? txtCustomQuery.Text : Query_SelectAllInTable;
+
+			worker.RunWorkerAsync(new BulkCopyParameters(cbSource, cbDest, tables, query));
 		}
 
 
@@ -189,7 +191,7 @@ namespace DbCopy
 		{
 			//TODO: use more usings!
 
-			Stopwatch sw = Stopwatch.StartNew();
+			var sw = Stopwatch.StartNew();
 			SqlConnection connSource = null;
 			SqlConnection connDest = null;
 
@@ -217,7 +219,7 @@ namespace DbCopy
 					try {
 						transaction = connDest.BeginTransaction();
 
-						string query = String.Format(expander.IsExpanded ? txtCustomQuery.Text : Query_SelectAllInTable, sTableName);
+						string query = String.Format(parameters.Query, sTableName);
 
 						reader = new SqlCommand(query, connSource) { CommandTimeout = 9000 }.ExecuteReader();
 
@@ -309,8 +311,8 @@ namespace DbCopy
 				} else {
 					string msgErrors = "The following tables failed to copy:";
 					Log.Error(msgErrors);
-					foreach (KeyValuePair<string, Exception> kvp in result.FailedTables) {
-						Log.Error($"    {kvp.Key}: {kvp.Value.Message}");
+					foreach (var kvp in result.FailedTables) {
+						Log.Error($"    {kvp.Key}: {kvp.Value}");
 					}
 					MessageBox.Show($"{msgCompleted}\n\n{msgErrors} {String.Join(", ", result.FailedTables.Keys.ToArray())}");
 				}
@@ -505,7 +507,7 @@ namespace DbCopy
 		private const string Query_SelectTableDetails = @"
 				select
 					QUOTENAME(su.name) + '.' + QUOTENAME(so.name) as TableNames,
-					si.rows as Rows
+					si.rows as [RowCount]
 				from sysobjects so
 				inner join sysusers su on so.uid = su.uid
 				inner join sysindexes si on si.id = so.id
@@ -523,7 +525,7 @@ namespace DbCopy
 		private const string Query_SelectTableDetailsAzure = @"
 				select
 					QUOTENAME(s.name) + '.' + QUOTENAME(t.name) as TableNames,
-					sum(ps.row_count) as Rows
+					sum(ps.row_count) as [RowCount]
 				from sys.tables t
 				join sys.schemas s on s.schema_id = t.schema_id
 				join sys.dm_db_partition_stats ps on ps.object_id = t.object_id
