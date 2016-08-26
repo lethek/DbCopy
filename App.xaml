@@ -4,6 +4,5 @@
     StartupUri="MainWindow.xaml"
 			 Exit="Application_Exit" Startup="Application_Startup">
     <Application.Resources>
-         
     </Application.Resources>
 </Application>

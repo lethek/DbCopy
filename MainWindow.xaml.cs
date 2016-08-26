@@ -11,6 +11,9 @@ using System.Windows.Media;
 
 using DbCopy.Properties;
 
+using Serilog;
+
+
 namespace DbCopy
 {
 	public partial class MainWindow : Window
@@ -253,7 +256,7 @@ namespace DbCopy
 
 						transaction.Commit();
 
-						Log.Info($"Copied approximately {parameters.Tables[sTableName]} rows to {sTableName}");
+						Log.Information("Copied approximately {0} rows to {1}", parameters.Tables[sTableName], sTableName);
 
 					} catch (Exception ex) {
 						result.FailedTables[sTableName] = ex;
@@ -295,7 +298,7 @@ namespace DbCopy
 				MessageBox.Show(e.Error.Message);
 
 			} else if (e.Cancelled) {
-				Log.Info("Bulk copy operation cancelled");
+				Log.Information("Bulk copy operation cancelled");
 
 			} else {
 				var result = e.Result as BulkCopyResult;
@@ -303,16 +306,17 @@ namespace DbCopy
 					return;
 				}
 
-				string msgCompleted = $"Bulk copy operation completed in {result.Elapsed.TotalMilliseconds} ms";
-				Log.Info(msgCompleted);
+				string msgTemplate = "Bulk copy operation completed in {0} ms";
+				Log.Information(msgTemplate, result.Elapsed.TotalMilliseconds);
 
+				string msgCompleted = String.Format(msgTemplate, result.Elapsed.TotalMilliseconds);
 				if (result.FailedTables.Count == 0) {
 					MessageBox.Show(msgCompleted);
 				} else {
 					string msgErrors = "The following tables failed to copy:";
 					Log.Error(msgErrors);
 					foreach (var kvp in result.FailedTables) {
-						Log.Error($"    {kvp.Key}: {kvp.Value}");
+						Log.Error("    {0}: {1}", kvp.Key, kvp.Value);
 					}
 					MessageBox.Show($"{msgCompleted}\n\n{msgErrors} {String.Join(", ", result.FailedTables.Keys.ToArray())}");
 				}
@@ -330,7 +334,7 @@ namespace DbCopy
 
 		private void sbc_SqlRowsCopied(object sender, SqlRowsCopiedEventArgs e)
 		{
-			Log.Debug($"Copied up to {e.RowsCopied} rows to {((SqlBulkCopy)sender).DestinationTableName}");
+			Log.Debug("Copied up to {0} rows to {1}", e.RowsCopied, ((SqlBulkCopy)sender).DestinationTableName);
 
 			double percentProgress = 100.0;
 			if (rowsInCurrentTable > 0) {
@@ -550,8 +554,6 @@ namespace DbCopy
 		private long rowsInCurrentTable;
 
 		private readonly BackgroundWorker worker = new BackgroundWorker();
-
-		private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
 
 	}
 
